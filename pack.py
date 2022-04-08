@@ -8,16 +8,17 @@ def handle_directory(base_path, depth_string):
                 # File
                 total_bytes += entry.stat().st_size
                 print(depth_string + entry.name + ":" + str(entry.stat().st_size))
-                # print("size:" + str(entry.stat().st_size))
+                # TODO:
+                # 1. Split large files. Move to target base.
+                # 2. Encrypt files. Move to target base.
+                # 3. Detect when max size is reached, change to new target base dir.
             elif entry.is_dir():
                 # Directory
                 print(depth_string+'#'+entry.name)
                 total_bytes += handle_directory(entry.path, depth_string+'-->')
-                # TODO... need a return value.
-                # e.g. total += handle_directory()
-                #   return total... ??
             else:
                 print ("OTHER!")
+        print(base_path, ", Total:",total_bytes)
         return total_bytes
 
 k=''
