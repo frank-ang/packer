@@ -7,6 +7,7 @@ log.setLevel(logging.DEBUG)
 
 class PackConfig:
     bin_max_bytes = 100
+    file_max_bytes = 50
     base_path = "."
     staging_path = "./staging"
     exclude_patterns = ""
@@ -26,6 +27,46 @@ class Bin:
         return self.bin_size
     def bin_name(self):
         return "CAR{}".format(self.bin_id)
+
+def handle_large_file(path, config, bin_list):
+    ''' 
+    split orig
+    for pieces:
+        if piece.size + bin.size > config.bin_max_bytes:
+            increment new bin.
+        bin.add(piece.size)
+        move piece
+    '''
+    logging.info("splitting large file. {}".format(path))
+    cur_bin = bin_list[-1]
+    file_number = 1
+    with open(path) as orig:
+        chunk = orig.read(config.file_max_bytes)
+        while chunk:
+            target_filename = "{}/{}.split.{}".format(os.path.dirname(path),os.path.basename(path), file_number)
+            with open(target_filename, "w") as target_file:
+                target_file.write(chunk)
+            file_number += 1
+            chunk_bytes = len(chunk)
+            # Note, split chunks of a large file may span multiple bins.
+            if (cur_bin.bin_size + chunk_bytes) > config.bin_max_bytes:
+                logging.debug("++Bin Increment! {} + {} > {}".format(cur_bin.bin_size, chunk_bytes, config.bin_max_bytes))
+                next_bin = Bin(cur_bin.bin_id + 1)
+                next_bin.add(chunk_bytes)
+                bin_list.append(next_bin)
+                cur_bin=next_bin
+            else:
+                cur_bin.add(chunk_bytes)
+            logging.debug("Bin:{}, BinSize:{}, Path:{} :FileSize:{}".format(
+                cur_bin.bin_id, cur_bin.bin_size, target_filename, chunk_bytes))
+            file_staging_path = os.path.join(config.staging_path, 
+                                cur_bin.bin_name(), 
+                                os.path.relpath(target_filename,config.base_path))
+            file_staging_path = os.path.normpath(file_staging_path)
+            logging.debug("... move to staging: {}".format(file_staging_path))
+
+            chunk = orig.read(config.file_max_bytes)
+
 
 def handle_directory(path, config, bin_list):
 
@@ -48,11 +89,15 @@ def handle_directory(path, config, bin_list):
 
             file_size = entry.stat().st_size
 
-            # TODO:
             # 1. Split large files. 
+            if file_size > config.file_max_bytes:
+                handle_large_file(entry.path, config, bin_list)
+                continue
+
+            # TODO
             # 2. Encrypt files. 
-            # 3. Detect when max size is reached, change to new target base dir.
-            # 4. Move files to target base.
+
+
             if (cur_bin.bin_size + file_size) > config.bin_max_bytes:
                 logging.debug("++Bin Increment! {} + {} > {}".format(cur_bin.bin_size, file_size, config.bin_max_bytes))
                 next_bin = Bin(cur_bin.bin_id + 1)
