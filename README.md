@@ -34,6 +34,44 @@ Cryptographic methods:
 
 Post-MVP, it will be essential to run scalability tests and benchmarks.  
 
+## Usage concept:
+
+```bash
+NAME
+    packer - Filecoin filesystem packager/unpackager
+
+SYNOPSIS
+
+    python packer.py [-p|-u] [-s SOURCE_PATH] [-t TEMP_PATH] [-o OUTPUT_PATH] [-b BIN_SIZE] [-e TODO]
+
+OPTIONS
+
+    -p, --pack
+        pack mode
+
+    -u, --unpack
+        unpack mode
+
+    -s SOURCE_PATH, --source SOURCE_PATH
+        During packing, the path to the pre-packed source data.
+        During unpacking, the path containing CAR files of packed data.
+
+    -t TEMP_PATH, --temp TEMP_PATH
+        Path to temporary working directory. 
+
+    -o OUTPUT_PATH, --output OUTPUT_PATH
+        Path to write final output of packaged or unpackaged content.
+        
+    -b BIN_SIZE, --bin BIN_SIZE
+        BIN_SIZE in bytes, default 32GB
+
+    -e, --encryption TODO
+        TODO encryption key stuff.
+
+    -h, --help
+        help
+```
+
 # Sample GPG Encryption / Decryption
 
 ## Prep keys

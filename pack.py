@@ -1,6 +1,6 @@
 from doctest import UnexpectedException
 import os,re, logging
-from unicodedata import name
+# from unicodedata import name
 
 log = logging.getLogger()
 log.setLevel(logging.DEBUG)
@@ -121,6 +121,7 @@ def handle_directory(path, config, bin_list):
         else:
             raise UnexpectedException("Entry is not dir or file type.")
 
+'''
 base_path="./test/origin" # TODO: fix Hardcoding
 staging_path="./test/staging"  # TODO: fix Hardcoding
 logging.debug("Scanning Path:" + base_path)
@@ -132,3 +133,4 @@ try:
 except Exception as e:
     logging.debug(e)
     raise
+'''
