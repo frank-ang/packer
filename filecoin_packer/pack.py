@@ -1,6 +1,6 @@
 from doctest import UnexpectedException
-import os,re, logging
-# from unicodedata import name
+import os,re, logging, shutil
+from pickle import TRUE
 
 log = logging.getLogger()
 log.setLevel(logging.DEBUG)
@@ -12,11 +12,12 @@ class PackConfig:
     output_path = "."
     tmp_path = "."
     exclude_patterns = ""
-    def __init__(self, source_path, output_path, tmp_path, bin_max_bytes):
+    def __init__(self, source_path, output_path, tmp_path, bin_max_bytes, file_max_bytes):
         self.source_path = source_path
         self.output_path = output_path
         self.tmp_path = tmp_path
         self.bin_max_bytes = bin_max_bytes
+        self.file_max_bytes = file_max_bytes
         self.exclude_patterns = [".DS_Store"]
 
 class Bin:
@@ -44,11 +45,19 @@ def handle_large_file(path, config, bin_list):
     cur_bin = bin_list[-1]
     file_number = 1
     with open(path) as orig:
+        # TODO change to buffered reads and buffered writes to handle super large files.
         chunk = orig.read(config.file_max_bytes)
         while chunk:
-            target_filename = "{}/{}.split.{}".format(os.path.dirname(path),os.path.basename(path), file_number)
-            with open(target_filename, "w") as target_file:
-                target_file.write(chunk)
+            staging_filename = "{}/{}.split.{}".format(os.path.dirname(path),os.path.basename(path), file_number)
+            staging_filename = os.path.join(config.tmp_path,
+                                cur_bin.bin_name(),
+                                staging_filename)
+                                # os.path.relpath(staging_filename,config.tmp_path))
+            staging_filename = os.path.normpath(staging_filename)
+            os.makedirs(os.path.dirname(staging_filename), exist_ok=TRUE)
+            logging.debug("# writing chunk to: {}".format(staging_filename))
+            with open(staging_filename, "w") as staging_file:
+                staging_file.write(chunk)
             file_number += 1
             chunk_bytes = len(chunk)
             # Note, split chunks of a large file may span multiple bins.
@@ -61,13 +70,10 @@ def handle_large_file(path, config, bin_list):
             else:
                 cur_bin.add(chunk_bytes)
             logging.debug("Bin:{}, BinSize:{}, Path:{} :FileSize:{}".format(
-                cur_bin.bin_id, cur_bin.bin_size, target_filename, chunk_bytes))
-            file_output_path = os.path.join(config.output_path, 
-                                cur_bin.bin_name(), 
-                                os.path.relpath(target_filename,config.output_path))
-            file_output_path = os.path.normpath(file_output_path)
-            logging.debug("... move to staging: {}".format(file_output_path))
-
+                cur_bin.bin_id, cur_bin.bin_size, staging_filename, chunk_bytes))
+            #logging.debug("... move from:{} to staging: {}".format(file_staging_path,staging_filename))
+            #os.makedirs(os.path.dirname(file_staging_path), exist_ok=TRUE)
+            #shutil.move(staging_filename, file_staging_path)
             chunk = orig.read(config.file_max_bytes)
 
 
@@ -122,11 +128,13 @@ def bin_source_directory(path, config, bin_list):
                 cur_bin.add(file_size)
             logging.debug("Bin:{}, BinSize:{}, Path:{} :FileSize:{}".format(
                 cur_bin.bin_id, cur_bin.bin_size, entry.path, file_size))
-            file_output_path = os.path.join(config.output_path, 
+            file_staging_path = os.path.join(config.tmp_path,
                                 cur_bin.bin_name(), 
                                 os.path.relpath(entry.path,config.source_path))
-            file_output_path = os.path.normpath(file_output_path)
-            logging.debug("... copy to output: {}".format(file_output_path))
+            file_staging_path = os.path.normpath(file_staging_path)
+            logging.debug("... copy to output: {}".format(file_staging_path))
+            os.makedirs(os.path.dirname(file_staging_path), exist_ok=TRUE)
+            shutil.copyfile(entry.path, file_staging_path)
 
         elif entry.is_dir():
             # Directory
@@ -148,4 +156,11 @@ def pack_staging_to_car(path, config, bin_list):
         config: switches
         bin_list: Processing state maintained in a list of Bin objects.
     """
-    logging.debug("# pack_staging_to_car()")
+    logging.debug("# pack_staging_to_car(): path:{}".format(path))
+
+    with os.scandir(path) as iterator:
+        children = list(iterator)
+    children.sort(key= lambda x: x.name)
+
+    for entry in children:
+        logging.debug("# packing car from staging bin: {}".format(entry.path))

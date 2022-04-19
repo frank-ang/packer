@@ -14,6 +14,7 @@ def init_argparse() -> argparse.ArgumentParser:
     parser.add_argument('-t', '--temp', help='Path to temporary working directory. (optional)')
     parser.add_argument('-o', '--output', help='Path to write output of packaged or unpackaged content.')
     parser.add_argument('-b', '--binsize', help='Bin size (bytes)', default=1000, type=int)
+    parser.add_argument('--filemaxsize', help='File max size (bytes)', default=1000, type=int)
     # TODO encryption keys parameter.
     return parser
 
@@ -26,18 +27,19 @@ def main() -> None:
     output_path = args.output
     tmp_path = args.temp
     binsize = args.binsize
+    filemaxsize = args.filemaxsize
 
     if args.pack:
         # Pack up the source directory for transport into Filecoin via CAR format.
         print("Pack! {}".format(args.pack))
         logging.debug("Scanning Path:" + source_path)
         try:
-            config = PackConfig(source_path, output_path, tmp_path, binsize)
+            config = PackConfig(source_path, output_path, tmp_path, binsize, filemaxsize)
             bin_list = [Bin(0)]
             # 1. Pack the source directory into binned staging directories.
             bin_source_directory(source_path, config, bin_list)
             # 2. Pack the staging directories into CAR files into output directory.
-            pack_staging_to_car(source_path, config, bin_list)
+            pack_staging_to_car(tmp_path, config, bin_list)
 
             logging.debug("ID of last bin: {}".format(bin_list[-1].bin_id))
         except Exception as e:
