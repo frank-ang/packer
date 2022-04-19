@@ -17,7 +17,7 @@ To provide a toolset for packaging large potentially proprietary data sets. Obje
 ## Supported source storage system types (for MVP):
 * NFS / DASD / Posix file system.
 
-Extensibility possibilities to support multiple source storage systems:
+Extensibility possibilities to support additional source storage systems, particularly cloud object storage:
 * Amazon S3, and S3-compatible cloud object storage.
 * Azure Blob Storage
 * Google Cloud Storage

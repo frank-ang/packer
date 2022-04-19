@@ -1,6 +1,6 @@
 import argparse
 import logging
-from pack import PackConfig, Bin, handle_directory
+from filecoin_packer.pack import Bin, PackConfig, handle_directory
 
 def init_argparse() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(prog='PROG', 
@@ -23,15 +23,15 @@ def main() -> None:
     print(args)
 
     source_path = args.source
-    temp_path = args.temp
     output_path = args.output
+    tmp_path = args.temp
     binsize = args.binsize
 
     if args.pack:
         print("Pack! {}".format(args.pack))
         logging.debug("Scanning Path:" + source_path)
         try:
-            config = PackConfig(source_path, output_path)
+            config = PackConfig(source_path, output_path, tmp_path, binsize)
             bin_list = [Bin(0)]
             handle_directory(source_path, config, bin_list)
             logging.debug("ID of last bin: {}".format(bin_list[-1].bin_id))
