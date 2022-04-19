@@ -1,6 +1,6 @@
 import argparse
 import logging
-from filecoin_packer.pack import Bin, PackConfig, handle_directory
+from filecoin_packer.pack import Bin, PackConfig, bin_source_directory, pack_staging_to_car
 
 def init_argparse() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(prog='PROG', 
@@ -28,17 +28,23 @@ def main() -> None:
     binsize = args.binsize
 
     if args.pack:
+        # Pack up the source directory for transport into Filecoin via CAR format.
         print("Pack! {}".format(args.pack))
         logging.debug("Scanning Path:" + source_path)
         try:
             config = PackConfig(source_path, output_path, tmp_path, binsize)
             bin_list = [Bin(0)]
-            handle_directory(source_path, config, bin_list)
+            # 1. Pack the source directory into binned staging directories.
+            bin_source_directory(source_path, config, bin_list)
+            # 2. Pack the staging directories into CAR files into output directory.
+            pack_staging_to_car(source_path, config, bin_list)
+
             logging.debug("ID of last bin: {}".format(bin_list[-1].bin_id))
         except Exception as e:
             logging.debug(e)
             raise
     elif args.unpack:
+        # Pack up the source directory of CAR files into the output, with extraction and reassembly.
         print("Unpack! {}".format(args.pack))
 
 main()

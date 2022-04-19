@@ -71,10 +71,21 @@ def handle_large_file(path, config, bin_list):
             chunk = orig.read(config.file_max_bytes)
 
 
-def handle_directory(path, config, bin_list):
+def bin_source_directory(path, config, bin_list):
+    """
+    Processes the specified source path, 
+    copying files into maximum-sized bins of subdirectories within the destination path.
+    Features:
+    * Large file splitting. (current MVP)
+    * Encryption. (TODO implement)
+    Parameters:
+        path: Path of source filesystem.
+        config: switches
+        bin_list: Processing state maintained in a list of Bin objects.
+    """
 
     cur_bin = bin_list[-1]
-    logging.debug("# handle_directory(): path:{}, bin:{}".format(path, cur_bin.bin_id))
+    logging.debug("# bin_source_directory(): path:{}, bin:{}".format(path, cur_bin.bin_id))
 
     with os.scandir(path) as iterator:
         children = list(iterator)
@@ -119,7 +130,22 @@ def handle_directory(path, config, bin_list):
 
         elif entry.is_dir():
             # Directory
-            handle_directory(entry.path, config, bin_list)
+            bin_source_directory(entry.path, config, bin_list)
             # subdirectories may have added new bins
         else:
             raise UnexpectedException("Entry is not dir or file type.")
+
+
+def pack_staging_to_car(path, config, bin_list):
+    """
+    Processes the specified staging path, 
+    copying files into maximum-sized bins of subdirectories within the destination path.
+    Features:
+    * Large file splitting. (current MVP)
+    * Encryption. (TODO implement)
+    Parameters:
+        path: Path of source filesystem.
+        config: switches
+        bin_list: Processing state maintained in a list of Bin objects.
+    """
+    logging.debug("# pack_staging_to_car()")
