@@ -11,7 +11,7 @@ def init_argparse() -> argparse.ArgumentParser:
     group.add_argument('-p', '--pack', help='Pack mode', action=argparse.BooleanOptionalAction)
     group.add_argument('-u', '--unpack', help='Unpack mode', action=argparse.BooleanOptionalAction)
     parser.add_argument('-s', '--source', help='During packing, the path to the pre-packed source data. During unpacking, the path containing CAR files of packed data.')
-    parser.add_argument('-t', '--temp', help='Path to temporary working directory. (optional)')
+    parser.add_argument('-t', '--tmp', help='Path to temporary working directory. (optional)')
     parser.add_argument('-o', '--output', help='Path to write output of packaged or unpackaged content.')
     parser.add_argument('-b', '--binsize', help='Bin size (bytes)', default=1000, type=int)
     parser.add_argument('--filemaxsize', help='File max size (bytes)', default=1000, type=int)
@@ -25,7 +25,7 @@ def main() -> None:
 
     source_path = args.source
     output_path = args.output
-    tmp_path = args.temp
+    tmp_path = args.tmp
     binsize = args.binsize
     filemaxsize = args.filemaxsize
 
