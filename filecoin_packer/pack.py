@@ -1,7 +1,7 @@
-from doctest import UnexpectedException
-import os,re, logging, shutil
+import os,re, logging, shutil, glob
 from pickle import TRUE
 from subprocess import check_output, STDOUT
+from collections import defaultdict
 
 log = logging.getLogger()
 log.setLevel(logging.DEBUG)
@@ -53,7 +53,6 @@ def handle_large_file(path, config, bin_list):
             staging_filename = os.path.join(config.tmp_path,
                                 cur_bin.bin_name(),
                                 staging_filename)
-                                # os.path.relpath(staging_filename,config.tmp_path))
             staging_filename = os.path.normpath(staging_filename)
             os.makedirs(os.path.dirname(staging_filename), exist_ok=TRUE)
             logging.debug("# writing chunk to: {}".format(staging_filename))
@@ -139,7 +138,7 @@ def bin_source_directory(path, config, bin_list):
             bin_source_directory(entry.path, config, bin_list)
             # subdirectories may have added new bins
         else:
-            raise UnexpectedException("Entry is not dir or file type.")
+            raise Exception("Entry is not dir or file type.")
 
 
 def pack_staging_to_car(path, config):
@@ -172,11 +171,10 @@ def pack_staging_to_car(path, config):
 
 def unpack_car_to_staging(path, config):
     """
-    Unpacks a bunch of CAR files into a staging directory.
-
+    Unpacks a bunch of CAR files in a source directory, into a staging directory.
     """
     CAR_SUFFIX=".car"
-    logging.debug("# unpack_car_to_staging(): path:{}".format(path))
+    logging.debug("# unpack_car_to_staging(). path:{}".format(path))
     with os.scandir(path) as iterator:
         children = list(iterator)
     children.sort(key= lambda x: x.name)
@@ -192,3 +190,29 @@ def unpack_car_to_staging(path, config):
         logging.debug("# Unpack CAR executing: {}".format(ipfs_car_cmd))
         cmd_out = check_output(ipfs_car_cmd, stderr=STDOUT, shell=True)
         logging.debug("# Unpack CAR returns: {}".format(cmd_out))
+
+def join_large_files(path, config):
+    logging.debug("# join_large_files()")
+    SPLIT_FILE_PATTERN = "**/*.split.[0-9]*"
+    split_file_paths = sorted(glob.glob(SPLIT_FILE_PATTERN, root_dir=path, recursive=True))
+    large_file_map = defaultdict(list)
+    # Find all the part files for each split file.
+    for part_file_path in split_file_paths:
+        # Extract the original filename from the part file.
+        LARGE_FILENAME_REGEX = "(.+?)\.split\.[0-9]+?"
+        large_filename = re.search(LARGE_FILENAME_REGEX, part_file_path).group(1)
+        large_filename = os.path.normpath(os.path.join(config.tmp_path, large_filename))
+        large_file_map[large_filename].append(os.path.normpath(os.path.join(config.tmp_path,part_file_path)))
+    # Join the parts
+    for large_filename in large_file_map:
+        logging.debug("# joining {} from parts: {}".format(large_filename, large_file_map[large_filename]))
+        # Bufferred Join.
+        BLOCKSIZE = 4096
+        BLOCKS = 1024
+        chunk = BLOCKS * BLOCKSIZE
+        with open(large_filename, "wb") as outfile:
+            for part_file_path in large_file_map[large_filename]:
+                with open(part_file_path, "rb") as infile:
+                    outfile.write(infile.read(chunk))
+
+        # TODO Delete part files.
