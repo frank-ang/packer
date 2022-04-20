@@ -34,7 +34,7 @@ Cryptographic methods:
 
 Post-MVP, it will be essential to run scalability tests and benchmarks.  
 
-## Usage concept:
+# Usage concept:
 
 ```bash
 NAME
@@ -72,7 +72,16 @@ OPTIONS
         help
 ```
 
-# Sample GPG Encryption / Decryption
+
+# Prerequisites
+
+Install ipfs-car Node package globally.
+```bash
+npm install -g ipfs-car
+```
+
+# TODO notes.
+## Sample GPG Encryption / Decryption
 
 ## Prep keys
 Generate sender's GPG public and secret key.
@@ -112,10 +121,11 @@ Data Client performs decryption
 gpg -d data.encrypted > data.decrypted
 ```
 
-# TODO
+## Dev microgrant?
 
 Apply for dev microgrant? 
 https://github.com/ipfs/devgrants/blob/master/MICROGRANTS.md
 
-# TODO
-Angelo. Box interface.
+## Check for existing code that could be re-used?
+
+Check with Angelo about. Box interface.

@@ -1,6 +1,7 @@
 from doctest import UnexpectedException
 import os,re, logging, shutil
 from pickle import TRUE
+from subprocess import check_output, STDOUT
 
 log = logging.getLogger()
 log.setLevel(logging.DEBUG)
@@ -33,14 +34,14 @@ class Bin:
         return "CAR{}".format(self.bin_id)
 
 def handle_large_file(path, config, bin_list):
-    ''' 
+    """
     split orig
     for pieces:
         if piece.size + bin.size > config.bin_max_bytes:
             increment new bin.
         bin.add(piece.size)
         move piece
-    '''
+    """
     logging.info("splitting large file. {}".format(path))
     cur_bin = bin_list[-1]
     file_number = 1
@@ -71,9 +72,6 @@ def handle_large_file(path, config, bin_list):
                 cur_bin.add(chunk_bytes)
             logging.debug("Bin:{}, BinSize:{}, Path:{} :FileSize:{}".format(
                 cur_bin.bin_id, cur_bin.bin_size, staging_filename, chunk_bytes))
-            #logging.debug("... move from:{} to staging: {}".format(file_staging_path,staging_filename))
-            #os.makedirs(os.path.dirname(file_staging_path), exist_ok=TRUE)
-            #shutil.move(staging_filename, file_staging_path)
             chunk = orig.read(config.file_max_bytes)
 
 
@@ -162,5 +160,12 @@ def pack_staging_to_car(path, config, bin_list):
         children = list(iterator)
     children.sort(key= lambda x: x.name)
 
-    for entry in children:
-        logging.debug("# packing car from staging bin: {}".format(entry.path))
+    for car_directory in children:
+        logging.debug("# packing car from staging bin: {}".format(car_directory.path))
+        # Note, requires ipfs-car pre-installed globally:
+        #     npm install -g ipfs-car
+        #
+        ipfs_car_cmd = "ipfs-car --pack {} --output {}.car".format(car_directory.path, car_directory.path)
+        logging.debug("# CAR executing: {}".format(ipfs_car_cmd))
+        cmd_out = check_output(ipfs_car_cmd, stderr=STDOUT, shell=True)
+        logging.debug("# CAR returns: {}".format(cmd_out))
