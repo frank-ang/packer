@@ -159,13 +159,14 @@ def pack_staging_to_car(path, config, bin_list):
     with os.scandir(path) as iterator:
         children = list(iterator)
     children.sort(key= lambda x: x.name)
-
+    output_dir_path = os.path.normpath(config.output_path)
+    os.makedirs(output_dir_path, exist_ok=TRUE)
     for car_directory in children:
         logging.debug("# packing car from staging bin: {}".format(car_directory.path))
         # Note, requires ipfs-car pre-installed globally:
         #     npm install -g ipfs-car
         #
-        ipfs_car_cmd = "ipfs-car --pack {} --output {}.car".format(car_directory.path, car_directory.path)
+        ipfs_car_cmd = "ipfs-car --pack {} --output {}.car".format(car_directory.path, os.path.join(output_dir_path,os.path.basename(car_directory.path)))
         logging.debug("# CAR executing: {}".format(ipfs_car_cmd))
         cmd_out = check_output(ipfs_car_cmd, stderr=STDOUT, shell=True)
         logging.debug("# CAR returns: {}".format(cmd_out))

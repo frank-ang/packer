@@ -9,6 +9,8 @@ FILE_MAX_SIZE:=80
 help:
 	echo "Packer makefile"
 
+clean: clean_test
+
 clean_test:
 	rm -rf ${STAGING_PATH}/*
 	rm -rf ${CAR_PATH}/*
