@@ -21,5 +21,5 @@ test_pack:
 	python ./packer.py --pack --source ${SOURCE_PATH} --tmp ${STAGING_PATH} --output ${CAR_PATH} --binsize ${BIN_SIZE} --filemaxsize ${FILE_MAX_SIZE}
 
 test_unpack:
-	@echo "TODO!!"
+	rm -rf ${STAGING_PATH}/*
 	python ./packer.py --unpack --source ${CAR_PATH} --tmp ${STAGING_PATH} --output ${RESTORE_PATH} --binsize ${BIN_SIZE} --filemaxsize ${FILE_MAX_SIZE}

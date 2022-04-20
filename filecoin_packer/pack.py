@@ -142,7 +142,7 @@ def bin_source_directory(path, config, bin_list):
             raise UnexpectedException("Entry is not dir or file type.")
 
 
-def pack_staging_to_car(path, config, bin_list):
+def pack_staging_to_car(path, config):
     """
     Processes the specified staging path, 
     copying files into maximum-sized bins of subdirectories within the destination path.
@@ -163,10 +163,32 @@ def pack_staging_to_car(path, config, bin_list):
     os.makedirs(output_dir_path, exist_ok=TRUE)
     for car_directory in children:
         logging.debug("# packing car from staging bin: {}".format(car_directory.path))
-        # Note, requires ipfs-car pre-installed globally:
-        #     npm install -g ipfs-car
-        #
-        ipfs_car_cmd = "ipfs-car --pack {} --output {}.car".format(car_directory.path, os.path.join(output_dir_path,os.path.basename(car_directory.path)))
+        ipfs_car_cmd = "ipfs-car --pack {} --output {}.car".format(car_directory.path, 
+            os.path.join(output_dir_path,os.path.basename(car_directory.path)))
         logging.debug("# CAR executing: {}".format(ipfs_car_cmd))
         cmd_out = check_output(ipfs_car_cmd, stderr=STDOUT, shell=True)
         logging.debug("# CAR returns: {}".format(cmd_out))
+
+
+def unpack_car_to_staging(path, config):
+    """
+    Unpacks a bunch of CAR files into a staging directory.
+
+    """
+    CAR_SUFFIX=".car"
+    logging.debug("# unpack_car_to_staging(): path:{}".format(path))
+    with os.scandir(path) as iterator:
+        children = list(iterator)
+    children.sort(key= lambda x: x.name)
+    # Filter only matching ".car" files
+    staging_dir_path = os.path.normpath(config.tmp_path)
+    os.makedirs(staging_dir_path, exist_ok=TRUE)
+
+    for car_file in children:
+        if not car_file.name.endswith(CAR_SUFFIX):
+            continue
+
+        ipfs_car_cmd = "ipfs-car --unpack {} --output {}".format(car_file.path, staging_dir_path) 
+        logging.debug("# Unpack CAR executing: {}".format(ipfs_car_cmd))
+        cmd_out = check_output(ipfs_car_cmd, stderr=STDOUT, shell=True)
+        logging.debug("# Unpack CAR returns: {}".format(cmd_out))
