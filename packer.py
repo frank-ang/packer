@@ -1,5 +1,6 @@
 import argparse
 import logging
+from typing_extensions import Required
 from filecoin_packer.pack import Bin, PackConfig 
 from filecoin_packer.pack import bin_source_directory, pack_staging_to_car
 from filecoin_packer.pack import unpack_car_to_staging, join_large_files
@@ -10,13 +11,13 @@ def init_argparse() -> argparse.ArgumentParser:
         usage='python packer.py [-p|-u] [-s SOURCE_PATH] [-t TEMP_PATH] [-o OUTPUT_PATH] [-b BIN_SIZE] [-e TODO]',
         epilog="Alpha version.")
     group = parser.add_mutually_exclusive_group(required=True)
-    group.add_argument('-p', '--pack', help='Pack mode', action=argparse.BooleanOptionalAction)
-    group.add_argument('-u', '--unpack', help='Unpack mode', action=argparse.BooleanOptionalAction)
-    parser.add_argument('-s', '--source', help='During packing, the path to the pre-packed source data. During unpacking, the path containing CAR files of packed data.')
-    parser.add_argument('-t', '--tmp', help='Path to temporary working directory. (optional)')
-    parser.add_argument('-o', '--output', help='Path to write output of packaged or unpackaged content.')
-    parser.add_argument('-b', '--binsize', help='Bin size (bytes)', default=1000, type=int)
-    parser.add_argument('--filemaxsize', help='File max size (bytes)', default=1000, type=int)
+    group.add_argument('-p', '--pack', action=argparse.BooleanOptionalAction, help='Pack mode')
+    group.add_argument('-u', '--unpack', action=argparse.BooleanOptionalAction, help='Unpack mode')
+    parser.add_argument('-s', '--source', Required, help='During packing, the path to the pre-packed source data. During unpacking, the path containing CAR files of packed data.')
+    parser.add_argument('-t', '--tmp', Required, help='Path to temporary working directory. (optional)')
+    parser.add_argument('-o', '--output', Required, help='Path to write output of packaged or unpackaged content.')
+    parser.add_argument('-b', '--binsize', default=1000, type=int, help='Bin size (bytes)')
+    parser.add_argument('--filemaxsize', default=1000, type=int, help='File max size (bytes)')
     # TODO encryption keys parameter.
     return parser
 

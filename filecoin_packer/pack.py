@@ -189,7 +189,6 @@ def unpack_car_to_staging(path, config):
         ipfs_car_cmd = "ipfs-car --unpack {} --output {}".format(car_file.path, staging_dir_path) 
         logging.debug("# Unpack CAR executing: {}".format(ipfs_car_cmd))
         cmd_out = check_output(ipfs_car_cmd, stderr=STDOUT, shell=True)
-        logging.debug("# Unpack CAR returns: {}".format(cmd_out))
 
 def join_large_files(path, config):
     logging.debug("# join_large_files()")
@@ -214,5 +213,4 @@ def join_large_files(path, config):
             for part_file_path in large_file_map[large_filename]:
                 with open(part_file_path, "rb") as infile:
                     outfile.write(infile.read(chunk))
-
-        # TODO Delete part files.
+                os.remove(part_file_path)
