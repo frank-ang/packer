@@ -33,7 +33,7 @@ class Bin:
     def bin_name(self):
         return "CAR{}".format(self.bin_id)
 
-def handle_large_file(path, config, bin_list):
+def handle_large_file(filepath, config, bin_list):
     """
     split orig
     for pieces:
@@ -42,21 +42,24 @@ def handle_large_file(path, config, bin_list):
         bin.add(piece.size)
         move piece
     """
-    logging.info("splitting large file. {}".format(path))
+    logging.info("splitting large file. {}".format(filepath))
     cur_bin = bin_list[-1]
     file_number = 1
-    with open(path) as orig:
+    with open(filepath) as orig:
         # TODO change to buffered reads and buffered writes to handle super large files.
         chunk = orig.read(config.file_max_bytes)
         while chunk:
-            staging_filename = "{}/{}.split.{}".format(os.path.dirname(path),os.path.basename(path), file_number)
-            staging_filename = os.path.join(config.tmp_path,
+
+            path_in_car = os.path.relpath(os.path.dirname(filepath), config.source_path)
+            staging_chunkname = "{}/{}.split.{}".format(path_in_car, os.path.basename(filepath), file_number)
+            staging_chunkname = os.path.join(config.tmp_path,
                                 cur_bin.bin_name(),
-                                staging_filename)
-            staging_filename = os.path.normpath(staging_filename)
-            os.makedirs(os.path.dirname(staging_filename), exist_ok=TRUE)
-            logging.debug("# writing chunk to: {}".format(staging_filename))
-            with open(staging_filename, "w") as staging_file:
+                                staging_chunkname)
+            staging_chunkname = os.path.normpath(staging_chunkname)
+
+            os.makedirs(os.path.dirname(staging_chunkname), exist_ok=TRUE)
+            logging.debug("# writing chunk to: {}".format(staging_chunkname))
+            with open(staging_chunkname, "w") as staging_file:
                 staging_file.write(chunk)
             file_number += 1
             chunk_bytes = len(chunk)
@@ -70,7 +73,7 @@ def handle_large_file(path, config, bin_list):
             else:
                 cur_bin.add(chunk_bytes)
             logging.debug("Bin:{}, BinSize:{}, Path:{} :FileSize:{}".format(
-                cur_bin.bin_id, cur_bin.bin_size, staging_filename, chunk_bytes))
+                cur_bin.bin_id, cur_bin.bin_size, staging_chunkname, chunk_bytes))
             chunk = orig.read(config.file_max_bytes)
 
 
@@ -194,6 +197,7 @@ def join_large_files(path, config):
     logging.debug("# join_large_files()")
     SPLIT_FILE_PATTERN = "**/*.split.[0-9]*"
     split_file_paths = sorted(glob.glob(SPLIT_FILE_PATTERN, root_dir=path, recursive=True))
+    logging.info("## split_file_paths: {}".format(split_file_paths))
     large_file_map = defaultdict(list)
     # Find all the part files for each split file.
     for part_file_path in split_file_paths:
@@ -201,7 +205,9 @@ def join_large_files(path, config):
         LARGE_FILENAME_REGEX = "(.+?)\.split\.[0-9]+?"
         large_filename = re.search(LARGE_FILENAME_REGEX, part_file_path).group(1)
         large_filename = os.path.normpath(os.path.join(config.tmp_path, large_filename))
-        large_file_map[large_filename].append(os.path.normpath(os.path.join(config.tmp_path,part_file_path)))
+        part_file_path = os.path.normpath(os.path.join(config.tmp_path,part_file_path))
+        logging.info("## part_file_path: {}".format(part_file_path))
+        large_file_map[large_filename].append(part_file_path)
     # Join the parts
     for large_filename in large_file_map:
         logging.debug("# joining {} from parts: {}".format(large_filename, large_file_map[large_filename]))
@@ -214,3 +220,20 @@ def join_large_files(path, config):
                 with open(part_file_path, "rb") as infile:
                     outfile.write(infile.read(chunk))
                 os.remove(part_file_path)
+
+def combine_files_to_output(config):
+    logging.debug("# combine_files_to_output()")
+    staging_dir = os.path.abspath(os.path.normpath(config.tmp_path))
+    CAR_SUBDIR_CONTENT_PATTERN = "CAR[0-9]*/"
+    car_content_paths = sorted(glob.glob(CAR_SUBDIR_CONTENT_PATTERN, root_dir=staging_dir, recursive=False))
+    logging.debug("# car_content_paths: {}".format(car_content_paths))
+    
+    output_dir_path = os.path.abspath(config.output_path) + "/"
+    os.makedirs(output_dir_path, exist_ok=TRUE)
+
+    for bin_dir in car_content_paths:
+        bin_dir = os.path.normpath(os.path.join(staging_dir,bin_dir)) + "/"
+        logging.debug("# moving from:{}, to:{}".format(bin_dir, output_dir_path))
+        move_cmd = "rsync -a {} {}".format(bin_dir, output_dir_path) 
+        logging.debug("# Moving bin directory, executing: {}".format(move_cmd))
+        cmd_out = check_output(move_cmd, stderr=STDOUT, shell=True)

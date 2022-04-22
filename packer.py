@@ -1,9 +1,8 @@
 import argparse
 import logging
-from typing_extensions import Required
 from filecoin_packer.pack import Bin, PackConfig 
 from filecoin_packer.pack import bin_source_directory, pack_staging_to_car
-from filecoin_packer.pack import unpack_car_to_staging, join_large_files
+from filecoin_packer.pack import unpack_car_to_staging, join_large_files, combine_files_to_output
 
 def init_argparse() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(prog='PROG', 
@@ -13,9 +12,9 @@ def init_argparse() -> argparse.ArgumentParser:
     group = parser.add_mutually_exclusive_group(required=True)
     group.add_argument('-p', '--pack', action=argparse.BooleanOptionalAction, help='Pack mode')
     group.add_argument('-u', '--unpack', action=argparse.BooleanOptionalAction, help='Unpack mode')
-    parser.add_argument('-s', '--source', Required, help='During packing, the path to the pre-packed source data. During unpacking, the path containing CAR files of packed data.')
-    parser.add_argument('-t', '--tmp', Required, help='Path to temporary working directory. (optional)')
-    parser.add_argument('-o', '--output', Required, help='Path to write output of packaged or unpackaged content.')
+    parser.add_argument('-s', '--source', required=True, help='During packing, the path to the pre-packed source data. During unpacking, the path containing CAR files of packed data.')
+    parser.add_argument('-t', '--tmp', required=True, help='Path to temporary working directory. (optional)')
+    parser.add_argument('-o', '--output', required=True, help='Path to write output of packaged or unpackaged content.')
     parser.add_argument('-b', '--binsize', default=1000, type=int, help='Bin size (bytes)')
     parser.add_argument('--filemaxsize', default=1000, type=int, help='File max size (bytes)')
     # TODO encryption keys parameter.
@@ -42,7 +41,10 @@ def main() -> None:
             bin_list = [Bin(0)]
             # 1. Pack the source directory into binned staging directories.
             bin_source_directory(source_path, config, bin_list)
-            # 2. Pack the staging directories into CAR files into output directory.
+
+            # 2. TODO: Encrypt the staging directories.
+
+            # 3. Pack the staging directories into CAR files into output directory.
             pack_staging_to_car(tmp_path, config)
 
             logging.debug("ID of last bin: {}".format(bin_list[-1].bin_id))
@@ -61,8 +63,10 @@ def main() -> None:
             # 2. Join split file parts into original large files.
             join_large_files(tmp_path, config)
 
-            # 3. Combine the binned staging directories into a single file system.
-            #TODO
+            # 3. TODO decrypt files.
+
+            # 4. Combine the binned staging directories to the output path.
+            combine_files_to_output(config)
 
         except Exception as e:
             logging.debug(e)
