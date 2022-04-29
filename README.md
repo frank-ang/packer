@@ -128,4 +128,11 @@ https://github.com/ipfs/devgrants/blob/master/MICROGRANTS.md
 
 ## Check for existing code that could be re-used?
 
-Check with Angelo about. Box interface.
+Check with Angelo about any prior similar work. Stefaan: "Box interface"?.
+
+## Roadmap / backlog.
+
+* AWS Packer AMI with CloudFormation template using IAM instance profile for EFS use-case, on-prem NFS via DX use-case, S3 use-case.
+* S3 support.
+* Compression.
+

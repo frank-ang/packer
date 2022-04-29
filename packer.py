@@ -61,7 +61,7 @@ def main() -> None:
             unpack_car_to_staging(source_path, config)
 
             # 2. Join split file parts into original large files.
-            join_large_files(tmp_path, config)
+            join_large_files(config)
 
             # 3. TODO decrypt files.
 

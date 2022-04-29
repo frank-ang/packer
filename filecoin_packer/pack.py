@@ -13,10 +13,14 @@ class PackConfig:
     output_path = "."
     tmp_path = "."
     exclude_patterns = ""
+    STAGING_CONSOLIDATION_SUBDIR = "TEMP_STAGING"
+    staging_consolidation_path = ""
+
     def __init__(self, source_path, output_path, tmp_path, bin_max_bytes, file_max_bytes):
         self.source_path = source_path
         self.output_path = output_path
         self.tmp_path = tmp_path
+        self.staging_consolidation_path = "{}/{}/".format(os.path.abspath(self.tmp_path), self.STAGING_CONSOLIDATION_SUBDIR)
         self.bin_max_bytes = bin_max_bytes
         self.file_max_bytes = file_max_bytes
         self.exclude_patterns = [".DS_Store"]
@@ -193,20 +197,35 @@ def unpack_car_to_staging(path, config):
         logging.debug("# Unpack CAR executing: {}".format(ipfs_car_cmd))
         cmd_out = check_output(ipfs_car_cmd, stderr=STDOUT, shell=True)
 
-def join_large_files(path, config):
+    # Move all staging CAR subdirs into the same root dir.
+    staging_dir = os.path.abspath(os.path.normpath(config.tmp_path))
+    CAR_SUBDIR_CONTENT_PATTERN = "CAR[0-9]*/"
+    car_content_paths = sorted(glob.glob(CAR_SUBDIR_CONTENT_PATTERN, root_dir=staging_dir, recursive=False)) 
+    consolidated_staging_dir_path = config.staging_consolidation_path
+    os.makedirs(consolidated_staging_dir_path, exist_ok=TRUE)
+
+    for bin_dir in car_content_paths:
+        bin_dir = os.path.normpath(os.path.join(staging_dir_path,bin_dir)) + "/"
+        logging.debug("# moving from:{}, to:{}".format(bin_dir, consolidated_staging_dir_path))
+        move_cmd = "rsync -a {} {}".format(bin_dir, consolidated_staging_dir_path) 
+        logging.debug("# Moving bin directory, executing: {}".format(move_cmd))
+        cmd_out = check_output(move_cmd, stderr=STDOUT, shell=True)
+
+def join_large_files(config):
     logging.debug("# join_large_files()")
     SPLIT_FILE_PATTERN = "**/*.split.[0-9]*"
-    split_file_paths = sorted(glob.glob(SPLIT_FILE_PATTERN, root_dir=path, recursive=True))
+    split_file_paths = sorted(glob.glob(SPLIT_FILE_PATTERN, root_dir=config.staging_consolidation_path, recursive=True))
     logging.info("## split_file_paths: {}".format(split_file_paths))
     large_file_map = defaultdict(list)
     # Find all the part files for each split file.
     for part_file_path in split_file_paths:
         # Extract the original filename from the part file.
+        logging.debug("## part_file_path (1): {}".format(part_file_path))
         LARGE_FILENAME_REGEX = "(.+?)\.split\.[0-9]+?"
         large_filename = re.search(LARGE_FILENAME_REGEX, part_file_path).group(1)
-        large_filename = os.path.normpath(os.path.join(config.tmp_path, large_filename))
-        part_file_path = os.path.normpath(os.path.join(config.tmp_path,part_file_path))
-        logging.info("## part_file_path: {}".format(part_file_path))
+        large_filename = os.path.normpath(os.path.join(config.staging_consolidation_path, large_filename))
+        part_file_path = os.path.normpath(os.path.join(config.staging_consolidation_path, part_file_path))
+        logging.debug("## part_file_path (2): {}".format(part_file_path))
         large_file_map[large_filename].append(part_file_path)
     # Join the parts
     for large_filename in large_file_map:
@@ -215,7 +234,7 @@ def join_large_files(path, config):
         BLOCKSIZE = 4096
         BLOCKS = 1024
         chunk = BLOCKS * BLOCKSIZE
-        with open(large_filename, "wb") as outfile:
+        with open(large_filename, "w+b") as outfile:
             for part_file_path in large_file_map[large_filename]:
                 with open(part_file_path, "rb") as infile:
                     outfile.write(infile.read(chunk))
@@ -223,17 +242,20 @@ def join_large_files(path, config):
 
 def combine_files_to_output(config):
     logging.debug("# combine_files_to_output()")
-    staging_dir = os.path.abspath(os.path.normpath(config.tmp_path))
-    CAR_SUBDIR_CONTENT_PATTERN = "CAR[0-9]*/"
-    car_content_paths = sorted(glob.glob(CAR_SUBDIR_CONTENT_PATTERN, root_dir=staging_dir, recursive=False))
-    logging.debug("# car_content_paths: {}".format(car_content_paths))
-    
+    staging_dir = os.path.abspath(os.path.normpath(config.staging_consolidation_path)) + "/"
     output_dir_path = os.path.abspath(config.output_path) + "/"
     os.makedirs(output_dir_path, exist_ok=TRUE)
 
-    for bin_dir in car_content_paths:
+    logging.debug("# moving from:{}, to:{}".format(staging_dir, output_dir_path))
+    move_cmd = "rsync -a {} {}".format(staging_dir, output_dir_path) 
+    logging.debug("# Moving bin directory, executing: {}".format(move_cmd))
+    cmd_out = check_output(move_cmd, stderr=STDOUT, shell=True)
+
+'''
+    for bin_dir in staging_content_paths:
         bin_dir = os.path.normpath(os.path.join(staging_dir,bin_dir)) + "/"
         logging.debug("# moving from:{}, to:{}".format(bin_dir, output_dir_path))
         move_cmd = "rsync -a {} {}".format(bin_dir, output_dir_path) 
         logging.debug("# Moving bin directory, executing: {}".format(move_cmd))
         cmd_out = check_output(move_cmd, stderr=STDOUT, shell=True)
+'''
