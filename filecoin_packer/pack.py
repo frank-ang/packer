@@ -2,6 +2,7 @@ import os,re, logging, shutil, glob
 from pickle import TRUE
 from subprocess import check_output, STDOUT
 from collections import defaultdict
+from filecoin_packer.crypt import encrypt, decrypt
 
 log = logging.getLogger()
 log.setLevel(logging.DEBUG)
@@ -67,7 +68,12 @@ def handle_large_file(filepath, config, bin_list):
                 staging_file.write(chunk)
             file_number += 1
             chunk_bytes = len(chunk)
+
+            # Encrypt.
+            encrypt(staging_chunkname, config)
+
             # Note, split chunks of a large file may span multiple bins.
+            # TODO use the encrypted file's size if available.
             if (cur_bin.bin_size + chunk_bytes) > config.bin_max_bytes:
                 logging.debug("++Bin Increment! {} + {} > {}".format(cur_bin.bin_size, chunk_bytes, config.bin_max_bytes))
                 next_bin = Bin(cur_bin.bin_id + 1)
@@ -90,7 +96,7 @@ def bin_source_directory(path, config, bin_list):
     * Encryption. (TODO implement)
     Parameters:
         path: Path of source filesystem.
-        config: switches
+        config: parameters
         bin_list: Processing state maintained in a list of Bin objects.
     """
 
@@ -113,14 +119,13 @@ def bin_source_directory(path, config, bin_list):
 
             file_size = entry.stat().st_size
 
-            # 1. Split large files. 
+            # 1. Split large files, process each of the pieces. 
             if file_size > config.file_max_bytes:
                 handle_large_file(entry.path, config, bin_list)
                 continue
 
-            # TODO
             # 2. Encrypt files. 
-
+            encrypt(entry.path, config)
 
             if (cur_bin.bin_size + file_size) > config.bin_max_bytes:
                 logging.debug("++Bin Increment! {} + {} > {}".format(cur_bin.bin_size, file_size, config.bin_max_bytes))

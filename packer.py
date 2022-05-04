@@ -42,7 +42,8 @@ def main() -> None:
             # 1. Pack the source directory into binned staging directories.
             bin_source_directory(source_path, config, bin_list)
 
-            # 2. TODO: Encrypt the staging directories.
+            # 2. TODO: Encrypt the staging directories.?
+            # cryptography here, or inside step 1?
 
             # 3. Pack the staging directories into CAR files into output directory.
             pack_staging_to_car(tmp_path, config)
