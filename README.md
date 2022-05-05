@@ -152,7 +152,7 @@ openssl enc -in top_secret.txt -out top_secret.txt.enc -e -aes256 -k symmetric_k
 openssl enc -in top_secret.txt.enc -out top_secret.txt.decrypted -d -aes256 -k symmetric_keyfile.key
 ```
 
-### Generate private key:
+### Generate private key and public certificate.
 ```
 openssl req -x509 -nodes -days 100000 -newkey rsa:8912 -keyout private_key.pem -out certificate.pem
 ```
