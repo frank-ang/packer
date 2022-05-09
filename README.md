@@ -27,8 +27,8 @@ Extensibility possibilities to support additional source storage systems, partic
 ## Encryption / Decryption
 
 Cryptographic methods:
-* RSA 4096 (for MVP)
-* GnuPGP
+* RSA AES CBC
+* GnuPGP (TODO)
 
 ## Testing & Benchmarking
 
@@ -42,7 +42,7 @@ NAME
 
 SYNOPSIS
 
-    python packer.py [-p|-u] [-s SOURCE_PATH] [-t TEMP_PATH] [-o OUTPUT_PATH] [-b BIN_SIZE] [-e TODO]
+    python packer.py [-p|-u] [-s SOURCE_PATH] [-t TEMP_PATH] [-o OUTPUT_PATH] [-b BIN_SIZE] [-k ENCRYPTION_KEY]
 
 OPTIONS
 
@@ -57,7 +57,7 @@ OPTIONS
         During unpacking, the path containing CAR files of packed data.
 
     -t TEMP_PATH, --temp TEMP_PATH
-        Path to temporary working directory. 
+        Path to temporary staging directory. 
 
     -o OUTPUT_PATH, --output OUTPUT_PATH
         Path to write final output of packaged or unpackaged content.
@@ -65,8 +65,8 @@ OPTIONS
     -b BIN_SIZE, --bin BIN_SIZE
         BIN_SIZE in bytes, default 32GB
 
-    -e, --encryption TODO
-        TODO encryption key stuff.
+    -k, --key
+        Encryption certificate or private key.
 
     -h, --help
         help

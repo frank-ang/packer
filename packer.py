@@ -6,7 +6,7 @@ from filecoin_packer.pack import unpack_car_to_staging, join_large_files, decryp
 def init_argparse() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(prog='PROG', 
         description='Filecoin filesystem packager/unpackager',
-        usage='python packer.py [-p|-u] [-s SOURCE_PATH] [-t TEMP_PATH] [-o OUTPUT_PATH] [-b BIN_SIZE] [-e TODO]',
+        usage='python packer.py [--pack|--unpack] [-s SOURCE_PATH] [-t TEMP_PATH] [-o OUTPUT_PATH] [-b BIN_SIZE] [-k ENCRYPTION_KEY]',
         epilog="Alpha version.")
     group = parser.add_mutually_exclusive_group(required=True)
     group.add_argument('-p', '--pack', action=argparse.BooleanOptionalAction, help='Pack mode')
@@ -15,14 +15,13 @@ def init_argparse() -> argparse.ArgumentParser:
     parser.add_argument('-t', '--tmp', required=True, help='Path to temporary staging directory.')
     parser.add_argument('-o', '--output', required=True, help='Path to write output of packaged or unpackaged content.')
     parser.add_argument('-b', '--binsize', default=1000, type=int, help='Bin size (bytes)')
-    parser.add_argument('--filemaxsize', default=1000, type=int, help='File max size (bytes)')
+    parser.add_argument('-m', '--filemaxsize', default=1000, type=int, help='File max size (bytes)')
     parser.add_argument('-k', '--key', required=False, help='Cryptographic Key or Certificate')
     return parser
 
 def main() -> None:
     parser = init_argparse()
     args = parser.parse_args()
-    print(args)
 
     source_path = args.source
     output_path = args.output

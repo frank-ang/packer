@@ -1,5 +1,6 @@
 SHELL=/usr/bin/env bash
 SOURCE_PATH:=./test/source
+LARGE_DATA_PATH:=${SOURCE_PATH}/large
 STAGING_PATH:=/tmp/packer
 CAR_PATH:=./test/car
 RESTORE_PATH:=./test/restore
@@ -54,3 +55,14 @@ test_clean:
 	@rm -rf ${STAGING_PATH}/*
 	@rm -rf ${CAR_PATH}/*
 	@rm -rf ${RESTORE_PATH}/*
+
+test_init_large_data:
+	@echo "🛠 creating large dataset for test, in: ${LARGE_DATA_PATH} 🛠"
+	@mkdir -p ${LARGE_DATA_PATH}
+	@for n in `seq -s " " -f %02g 1 3`; do \
+		dd if=/dev/urandom of="${LARGE_DATA_PATH}/dummy-1G-$$n" bs=64M count=16 iflag=fullblock; \
+	done
+
+test_clean_large_data:
+	@echo "🧹 cleaning up large dataset after test, from: ${LARGE_DATA_PATH} 🧹"
+	@rm -rf ${LARGE_DATA_PATH}
