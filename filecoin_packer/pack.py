@@ -1,6 +1,6 @@
 import os,re, logging, shutil, glob
 from pickle import TRUE
-from subprocess import check_output, STDOUT
+from subprocess import CalledProcessError, check_output, STDOUT
 from collections import defaultdict
 from filecoin_packer.crypt import encrypt, decrypt
 
@@ -179,8 +179,11 @@ def pack_staging_to_car(config):
         ipfs_car_cmd = "ipfs-car --pack {} --output {}.car".format(car_directory.path, 
             os.path.join(output_dir_path,os.path.basename(car_directory.path)))
         logging.debug("# CAR executing: {}".format(ipfs_car_cmd))
-        cmd_out = check_output(ipfs_car_cmd, stderr=STDOUT, shell=True)
-        logging.debug("# CAR returns: {}".format(cmd_out))
+        try:
+            cmd_out = check_output(ipfs_car_cmd, stderr=STDOUT, shell=True)
+            logging.debug("# CAR completed, output: {}".format(cmd_out))
+        except CalledProcessError as e:
+            raise Exception(e.output) from e
 
 
 def unpack_car_to_staging(config):
@@ -202,7 +205,10 @@ def unpack_car_to_staging(config):
 
         ipfs_car_cmd = "ipfs-car --unpack {} --output {}".format(car_file.path, staging_dir_path) 
         logging.debug("# Unpack CAR executing: {}".format(ipfs_car_cmd))
-        cmd_out = check_output(ipfs_car_cmd, stderr=STDOUT, shell=True)
+        try:
+            cmd_out = check_output(ipfs_car_cmd, stderr=STDOUT, shell=True)
+        except CalledProcessError as e:
+            raise Exception(e.output) from e
 
     # Move all staging CAR subdirs into the same root dir.
     staging_dir = os.path.abspath(os.path.normpath(config.staging_base_path))
@@ -216,7 +222,10 @@ def unpack_car_to_staging(config):
         logging.debug("# moving from:{}, to:{}".format(bin_dir, consolidated_staging_dir_path))
         move_cmd = "rsync -a {} {}".format(bin_dir, consolidated_staging_dir_path) 
         logging.debug("# Moving bin: {}".format(move_cmd))
-        cmd_out = check_output(move_cmd, stderr=STDOUT, shell=True)
+        try:
+            cmd_out = check_output(move_cmd, stderr=STDOUT, shell=True)
+        except CalledProcessError as e:
+            raise Exception(e.output) from e
 
 def join_large_files(config):
     logging.debug("# join_large_files()")
@@ -255,7 +264,10 @@ def combine_files_to_output(config):
     logging.debug("# moving from:{}, to:{}".format(staging_dir, output_dir_path))
     move_cmd = "rsync -a {} {}".format(staging_dir, output_dir_path) 
     logging.debug("# Moving bin: {}".format(move_cmd))
-    cmd_out = check_output(move_cmd, stderr=STDOUT, shell=True)
+    try:
+        cmd_out = check_output(move_cmd, stderr=STDOUT, shell=True)
+    except CalledProcessError as e:
+            raise Exception(e.output) from e
 
 def decrypt_staging_files(dir_path, config):
     """
