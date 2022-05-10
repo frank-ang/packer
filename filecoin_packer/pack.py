@@ -212,8 +212,8 @@ def unpack_car_to_staging(config):
 
     # Move all staging CAR subdirs into the same root dir.
     staging_dir = os.path.abspath(os.path.normpath(config.staging_base_path))
-    CAR_SUBDIR_CONTENT_PATTERN = "CAR[0-9]*/"
-    car_content_paths = sorted(glob.glob(CAR_SUBDIR_CONTENT_PATTERN, root_dir=staging_dir, recursive=False)) 
+    CAR_SUBDIR_CONTENT_PATTERN = staging_dir + "/CAR[0-9]*/"
+    car_content_paths = sorted(glob.glob(CAR_SUBDIR_CONTENT_PATTERN, recursive=False)) 
     consolidated_staging_dir_path = config.staging_consolidation_path
     os.makedirs(consolidated_staging_dir_path, exist_ok=TRUE)
 
@@ -229,8 +229,8 @@ def unpack_car_to_staging(config):
 
 def join_large_files(config):
     logging.debug("# join_large_files()")
-    SPLIT_FILE_PATTERN = "**/*.split.[0-9]*"
-    split_file_paths = sorted(glob.glob(SPLIT_FILE_PATTERN, root_dir=config.staging_consolidation_path, recursive=True))
+    SPLIT_FILE_PATTERN = config.staging_consolidation_path + "/**/*.split.[0-9]*"
+    split_file_paths = sorted(glob.glob(SPLIT_FILE_PATTERN, recursive=True))
     logging.info("## split_file_paths: {}".format(split_file_paths))
     large_file_map = defaultdict(list)
     # Find all the part files for each split file.
