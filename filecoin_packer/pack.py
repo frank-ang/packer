@@ -1,11 +1,8 @@
 import os,re, logging, shutil, glob
 from pickle import TRUE
-from subprocess import check_output, STDOUT
+from subprocess import CalledProcessError, check_output, STDOUT
 from collections import defaultdict
 from filecoin_packer.crypt import encrypt, decrypt
-
-log = logging.getLogger()
-log.setLevel(logging.DEBUG)
 
 class PackConfig:
     bin_max_bytes = 100
@@ -49,7 +46,7 @@ def pack_large_file_to_staging(filepath, config, bin_list):
     logging.info("splitting large file. {}".format(filepath))
     cur_bin = bin_list[-1]
     file_number = 1
-    with open(filepath) as orig:
+    with open(filepath, mode='rb') as orig:
         chunk = orig.read(config.file_max_bytes)
         while chunk:
 
@@ -62,7 +59,7 @@ def pack_large_file_to_staging(filepath, config, bin_list):
 
             os.makedirs(os.path.dirname(staging_chunkname), exist_ok=TRUE)
             logging.debug("# writing chunk to: {}".format(staging_chunkname))
-            with open(staging_chunkname, "w") as staging_file:
+            with open(staging_chunkname, "wb") as staging_file:
                 staging_file.write(chunk)
             file_number += 1
             chunk_bytes = len(chunk)
@@ -182,8 +179,11 @@ def pack_staging_to_car(config):
         ipfs_car_cmd = "ipfs-car --pack {} --output {}.car".format(car_directory.path, 
             os.path.join(output_dir_path,os.path.basename(car_directory.path)))
         logging.debug("# CAR executing: {}".format(ipfs_car_cmd))
-        cmd_out = check_output(ipfs_car_cmd, stderr=STDOUT, shell=True)
-        logging.debug("# CAR returns: {}".format(cmd_out))
+        try:
+            cmd_out = check_output(ipfs_car_cmd, stderr=STDOUT, shell=True)
+            logging.debug("# CAR completed, output: {}".format(cmd_out))
+        except CalledProcessError as e:
+            raise Exception(e.output) from e
 
 
 def unpack_car_to_staging(config):
@@ -205,12 +205,15 @@ def unpack_car_to_staging(config):
 
         ipfs_car_cmd = "ipfs-car --unpack {} --output {}".format(car_file.path, staging_dir_path) 
         logging.debug("# Unpack CAR executing: {}".format(ipfs_car_cmd))
-        cmd_out = check_output(ipfs_car_cmd, stderr=STDOUT, shell=True)
+        try:
+            cmd_out = check_output(ipfs_car_cmd, stderr=STDOUT, shell=True)
+        except CalledProcessError as e:
+            raise Exception(e.output) from e
 
     # Move all staging CAR subdirs into the same root dir.
     staging_dir = os.path.abspath(os.path.normpath(config.staging_base_path))
-    CAR_SUBDIR_CONTENT_PATTERN = "CAR[0-9]*/"
-    car_content_paths = sorted(glob.glob(CAR_SUBDIR_CONTENT_PATTERN, root_dir=staging_dir, recursive=False)) 
+    CAR_SUBDIR_CONTENT_PATTERN = staging_dir + "/CAR[0-9]*/"
+    car_content_paths = sorted(glob.glob(CAR_SUBDIR_CONTENT_PATTERN, recursive=False)) 
     consolidated_staging_dir_path = config.staging_consolidation_path
     os.makedirs(consolidated_staging_dir_path, exist_ok=TRUE)
 
@@ -219,12 +222,15 @@ def unpack_car_to_staging(config):
         logging.debug("# moving from:{}, to:{}".format(bin_dir, consolidated_staging_dir_path))
         move_cmd = "rsync -a {} {}".format(bin_dir, consolidated_staging_dir_path) 
         logging.debug("# Moving bin: {}".format(move_cmd))
-        cmd_out = check_output(move_cmd, stderr=STDOUT, shell=True)
+        try:
+            cmd_out = check_output(move_cmd, stderr=STDOUT, shell=True)
+        except CalledProcessError as e:
+            raise Exception(e.output) from e
 
 def join_large_files(config):
     logging.debug("# join_large_files()")
-    SPLIT_FILE_PATTERN = "**/*.split.[0-9]*"
-    split_file_paths = sorted(glob.glob(SPLIT_FILE_PATTERN, root_dir=config.staging_consolidation_path, recursive=True))
+    SPLIT_FILE_PATTERN = config.staging_consolidation_path + "/**/*.split.[0-9]*"
+    split_file_paths = sorted(glob.glob(SPLIT_FILE_PATTERN, recursive=True))
     logging.info("## split_file_paths: {}".format(split_file_paths))
     large_file_map = defaultdict(list)
     # Find all the part files for each split file.
@@ -243,7 +249,7 @@ def join_large_files(config):
         BLOCKSIZE = 4096
         BLOCKS = 1024
         chunk = BLOCKS * BLOCKSIZE
-        with open(large_filename, "w+b") as outfile:
+        with open(large_filename, "wb") as outfile:
             for part_file_path in large_file_map[large_filename]:
                 with open(part_file_path, "rb") as infile:
                     outfile.write(infile.read(chunk))
@@ -258,7 +264,10 @@ def combine_files_to_output(config):
     logging.debug("# moving from:{}, to:{}".format(staging_dir, output_dir_path))
     move_cmd = "rsync -a {} {}".format(staging_dir, output_dir_path) 
     logging.debug("# Moving bin: {}".format(move_cmd))
-    cmd_out = check_output(move_cmd, stderr=STDOUT, shell=True)
+    try:
+        cmd_out = check_output(move_cmd, stderr=STDOUT, shell=True)
+    except CalledProcessError as e:
+            raise Exception(e.output) from e
 
 def decrypt_staging_files(dir_path, config):
     """

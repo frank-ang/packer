@@ -1,5 +1,7 @@
 # Packer.
 
+![build-status](https://codebuild.ap-southeast-1.amazonaws.com/badges?uuid=eyJlbmNyeXB0ZWREYXRhIjoiYWpVaWFsSFROeDZvWHFhZkliaHpVcVNMRWFOK3VMSXNKOVVHckhPcm00ZUJSNVR2ZUxSTjd2SDFwcERVTFpQaXhQNUVJZUFDTzRLR2wvWTgwZ2pKWkxZPSIsIml2UGFyYW1ldGVyU3BlYyI6InQvTjdlY1M5WFdhbHJSM1giLCJtYXRlcmlhbFNldFNlcmlhbCI6MX0%3D&branch=main "Build Status")
+
 Utility to perform packaging of files for Filecoin deals. Performs: file encryption, large file splitting, and generation of CAR files, in preparation of data storage movement. After data retrieval from Filecoin, performs: CAR file extraction, large file reassembly, file decryption.
 
 
@@ -154,7 +156,10 @@ openssl enc -in top_secret.txt.enc -out top_secret.txt.decrypted -d -aes256 -k s
 
 ### Generate private key and public certificate.
 ```
-openssl req -x509 -nodes -days 100000 -newkey rsa:8912 -keyout private_key.pem -out certificate.pem
+openssl req -x509 -nodes -days 100000 -newkey rsa:2048 -keyout private_key.pem -out certificate.pem
+
+# non-interactive:
+openssl req -x509 -nodes -days 1 -newkey rsa:2048 -keyout private_key.pem -out certificate.pem -subj "/C=ZZ/O=protocol.ai/OU=outercore/CN=packer"
 ```
 
 ### Encryption/decryption combining both symmetric+asymmetric. Should work for large binary files:
