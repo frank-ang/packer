@@ -49,7 +49,7 @@ def pack_large_file_to_staging(filepath, config, bin_list):
     logging.info("splitting large file. {}".format(filepath))
     cur_bin = bin_list[-1]
     file_number = 1
-    with open(filepath) as orig:
+    with open(filepath, mode='rb') as orig:
         chunk = orig.read(config.file_max_bytes)
         while chunk:
 
@@ -62,7 +62,7 @@ def pack_large_file_to_staging(filepath, config, bin_list):
 
             os.makedirs(os.path.dirname(staging_chunkname), exist_ok=TRUE)
             logging.debug("# writing chunk to: {}".format(staging_chunkname))
-            with open(staging_chunkname, "w") as staging_file:
+            with open(staging_chunkname, "wb") as staging_file:
                 staging_file.write(chunk)
             file_number += 1
             chunk_bytes = len(chunk)
@@ -243,7 +243,7 @@ def join_large_files(config):
         BLOCKSIZE = 4096
         BLOCKS = 1024
         chunk = BLOCKS * BLOCKSIZE
-        with open(large_filename, "w+b") as outfile:
+        with open(large_filename, "wb") as outfile:
             for part_file_path in large_file_map[large_filename]:
                 with open(part_file_path, "rb") as infile:
                     outfile.write(infile.read(chunk))
