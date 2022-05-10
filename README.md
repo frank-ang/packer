@@ -154,7 +154,10 @@ openssl enc -in top_secret.txt.enc -out top_secret.txt.decrypted -d -aes256 -k s
 
 ### Generate private key and public certificate.
 ```
-openssl req -x509 -nodes -days 100000 -newkey rsa:8912 -keyout private_key.pem -out certificate.pem
+openssl req -x509 -nodes -days 100000 -newkey rsa:2048 -keyout private_key.pem -out certificate.pem
+
+# non-interactive:
+openssl req -x509 -nodes -days 1 -newkey rsa:2048 -keyout private_key.pem -out certificate.pem -subj "/C=ZZ/O=protocol.ai/OU=outercore/CN=packer"
 ```
 
 ### Encryption/decryption combining both symmetric+asymmetric. Should work for large binary files:

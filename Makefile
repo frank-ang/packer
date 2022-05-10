@@ -7,8 +7,10 @@ CAR_PATH:=./test/car
 RESTORE_PATH:=./test/restore
 BIN_SIZE:=160
 MAX_FILE_SIZE:=80
-CERTIFICATE:=stuff.gitignore/rsa/certificate.pem
-PRIVATE_KEY:=stuff.gitignore/rsa/private_key.pem
+#CERTIFICATE_ROOT:=stuff.gitignore/rsa
+CERTIFICATE_ROOT:=./test/security.rsa.gitignore
+CERTIFICATE:=${CERTIFICATE_ROOT}/certificate.pem
+PRIVATE_KEY:=${CERTIFICATE_ROOT}/private_key.pem
 
 help:
 	echo "Packer makefile"
@@ -41,7 +43,6 @@ test_pack test_pack_small test_pack_medium test_pack_large:
 	@echo; echo "📦📦📦📦 Test: $@ 📦📦📦📦"
 	@echo "📦📦📦📦 Testing Packing. Max file size: ${MAX_FILE_SIZE} 📦📦📦📦"
 	python ./packer.py --pack --source ${SOURCE_PATH} --tmp ${STAGING_PATH} --output ${CAR_PATH} --binsize ${BIN_SIZE} --filemaxsize $(MAX_FILE_SIZE) --key $(CERTIFICATE)
-# TODO verification steps??
 
 test_unpack test_unpack_small test_unpack_medium test_unpack_large:
 	@rm -rf ${STAGING_PATH}/*
@@ -65,9 +66,9 @@ init_testdata:
 	done
 
 init_certificate_pair:
-	@echo "🔑 generating certificate pair..."
-	@echo "### TODO ###"
-# TODO:
+	@echo "🔑 generating RSA certificate pair..."
+	mkdir -p ${CERTIFICATE_ROOT}
+	openssl req -x509 -nodes -days 1 -newkey rsa:2048 -keyout ${PRIVATE_KEY} -out ${CERTIFICATE} -subj "/C=ZZ/O=protocol.ai/OU=outercore/CN=packer"
 
 clean_testdata:
 	@echo "🧹 cleaning up test dataset after test, from: ${LARGE_DATA_PATH} 🧹"

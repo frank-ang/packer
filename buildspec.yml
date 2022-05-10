@@ -13,7 +13,9 @@ phases:
       - cd $CODEBUILD_SRC_DIR
       - make init_certificate_pair
       - make init_testdata
+      - make test_all
       - python -m pytest test/test_packer.py --junitxml=$CODEBUILD_SRC_DIR/test-report.xml
+      - make clean_testdata
 
 reports:
   pytest_reports:
