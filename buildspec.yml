@@ -6,6 +6,8 @@ phases:
     commands:
       - pip3 install awscli --upgrade --user
       - pip install -r requirements.txt
+      - npm install -g ipfs-car
+
 #  pre_build:
 
   build:
