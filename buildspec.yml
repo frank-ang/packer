@@ -2,20 +2,24 @@ version: 0.2
 phases:
   install:
     runtime-versions:
-      python: 3.7
+      python: 3.10
     commands:
       - pip3 install awscli --upgrade --user
       - pip install -r requirements.txt
+      - pwd
+      - env
 
 #  pre_build:
 
   build:
     commands:
-      - python -m pytest --junitxml=$CODEBUILD_SRC_DIR/test-reports/test-report.xml
+      - pwd
+      - cd $CODEBUILD_SRC_DIR
+      - python -m pytest test/test_packer.py --junitxml=$CODEBUILD_SRC_DIR/test-report.xml
 
 reports:
   pytest_reports:
     files:
       - test-report.xml
-    base-directory: $CODEBUILD_SRC_DIR/test-reports
+    base-directory: $CODEBUILD_SRC_DIR
     file-format: JUNITXML
