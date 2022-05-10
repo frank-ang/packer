@@ -4,9 +4,6 @@ from subprocess import check_output, STDOUT
 from collections import defaultdict
 from filecoin_packer.crypt import encrypt, decrypt
 
-log = logging.getLogger()
-log.setLevel(logging.DEBUG)
-
 class PackConfig:
     bin_max_bytes = 100
     file_max_bytes = 50

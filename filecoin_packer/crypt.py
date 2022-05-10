@@ -1,11 +1,7 @@
 import gnupg, logging, os
 from subprocess import CalledProcessError, check_output, STDOUT
 
-log = logging.getLogger()
-log.setLevel(logging.DEBUG)
-
 gpg = gnupg.GPG()
-logging.debug(gpg.list_keys())
 
 def encrypt(file_path, destination_path, config):
     """
