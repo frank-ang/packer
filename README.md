@@ -1,6 +1,6 @@
 # Packer.
 
-![build-status](https://codebuild.ap-southeast-1.amazonaws.com/badges?uuid=eyJlbmNyeXB0ZWREYXRhIjoiYWpVaWFsSFROeDZvWHFhZkliaHpVcVNMRWFOK3VMSXNKOVVHckhPcm00ZUJSNVR2ZUxSTjd2SDFwcERVTFpQaXhQNUVJZUFDTzRLR2wvWTgwZ2pKWkxZPSIsIml2UGFyYW1ldGVyU3BlYyI6InQvTjdlY1M5WFdhbHJSM1giLCJtYXRlcmlhbFNldFNlcmlhbCI6MX0%3D&branch=main "Build Status")
+![build-status](https://codebuild.ap-southeast-1.amazonaws.com/badges?uuid=eyJlbmNyeXB0ZWREYXRhIjoiU0d2SGdpZ0Z3elZGcnVueXFGNG9CV2dEbnN3SnNFMlpaNEFVbkZrb3NYK0RoMTNGVHp1U0Q2R0VrUkdMdEwwWXYyN2NHVWd2QjNsS2Z2Sjl6elc3V1ZjPSIsIml2UGFyYW1ldGVyU3BlYyI6InpMVE1vRzlGaG5yLzVUVnEiLCJtYXRlcmlhbFNldFNlcmlhbCI6MX0%3D&branch=master "Build Status")
 
 Utility to perform packaging of files for Filecoin deals. Performs: file encryption, large file splitting, and generation of CAR files, in preparation of data storage movement. After data retrieval from Filecoin, performs: CAR file extraction, large file reassembly, file decryption.
 
