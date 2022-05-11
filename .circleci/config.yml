@@ -8,8 +8,7 @@ workflows:
 jobs:
   test:
     docker:
-      - image: cimg/python:3.10.1
-      cimg/python:3.7-node
+      - image: cimg/python:3.7-node
     steps:
       - checkout
       - node/install-npm
