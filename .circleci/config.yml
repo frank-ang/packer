@@ -1,7 +1,7 @@
 version: 2.1
 orbs:
-  python: circleci/python
-  node: circleci/node@5.0.2
+  python: cimg/python
+  node: cimg/node
 workflows:
   test: # This is the name of the workflow, feel free to change it to better match your workflow.
     jobs:
