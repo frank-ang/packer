@@ -13,8 +13,6 @@ phases:
   build:
     commands:
       - cd $CODEBUILD_SRC_DIR
-# Deliberate fail to test codebuild badge failure from pipeline.
-      - exit 127 
       - make init_testdata
       - make test_all
       - make test_large

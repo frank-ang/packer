@@ -1,0 +1,36 @@
+version: 2.1
+orbs:
+  python: circleci/python@1.5.0
+workflows:
+  test: # This is the name of the workflow, feel free to change it to better match your workflow.
+    jobs:
+      - test
+jobs:
+  test:
+    docker:
+      - image: cimg/python:3.10.1
+    steps:
+      - checkout
+      - python/install-packages:
+          pkg-manager: pip
+      - run:
+          name: Install Python deps 
+          command: |
+            pip install -r requirements.txt
+            npm install -g ipfs-car
+# python3 -m venv venv
+# . venv/bin/activate
+      - run: echo "Testing Packer..."
+      - run:
+          name: Run tests
+          command: |
+            make init_testdata
+            make test_all
+            make test_large
+            python -m pytest test/test_packer.py --junitxml=reports/test-report.xml
+      - store_test_results:
+          path: reports/
+#      - persist_to_workspace:
+#          root: ~/project
+#          paths:
+#            - .
