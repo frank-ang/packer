@@ -17,7 +17,7 @@ jobs:
           name: Install Python deps 
           command: |
             pip install -r requirements.txt
-            apt install nodejs npm
+            sudo apt install nodejs npm
             npm install -g ipfs-car
 # python3 -m venv venv
 # . venv/bin/activate
