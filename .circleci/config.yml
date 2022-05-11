@@ -1,14 +1,15 @@
 version: 2.1
 orbs:
-  python: cimg/python:3.10-node
+  python: circleci/python
+  node: circleci/node@5.0.2
 workflows:
   test: # This is the name of the workflow, feel free to change it to better match your workflow.
     jobs:
       - test
 jobs:
   test:
-    docker:
-      - image: cimg/python:3.10.4-node
+#    docker:
+#      - image: cimg/python
     steps:
       - checkout
       - python/install-packages:
