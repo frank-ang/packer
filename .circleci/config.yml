@@ -8,10 +8,9 @@ workflows:
 jobs:
   test:
     docker:
-      - image: cimg/python:3.7-node
+      - image: cimg/python:3.10.4-node
     steps:
       - checkout
-      - node/install-npm
       - python/install-packages:
           pkg-manager: pip
       - run:
