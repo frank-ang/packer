@@ -8,8 +8,8 @@ workflows:
       - test
 jobs:
   test:
-#    docker:
-#      - image: cimg/python
+    docker:
+      - image: cimg/python
     steps:
       - checkout
       - python/install-packages:
