@@ -19,7 +19,7 @@ jobs:
           command: |
             pip install -r requirements.txt
 # sudo apt install nodejs npm
-            npm install -g ipfs-car
+# npm install -g ipfs-car
 # python3 -m venv venv
 # . venv/bin/activate
       - run: echo "Testing Packer..."
