@@ -13,14 +13,15 @@ phases:
   build:
     commands:
       - cd $CODEBUILD_SRC_DIR
+# Deliberate fail to test codebuild badge failure from pipeline
+      - exit 127 
       - make init_testdata
       - make test_all
       - make test_large
-      - python -m pytest test/test_packer.py --junitxml=$CODEBUILD_SRC_DIR/reports/test-report.xml
+      - python -m pytest test/test_packer.py --junitxml=reports/test-report.xml
 
 reports:
   pytest_reports:
     files:
-      - test-report.xml
-    base-directory: $CODEBUILD_SRC_DIR/reports
-    file-format: JUNITXML
+      - reports/*.xml
+    file-format: "JUNITXML"
