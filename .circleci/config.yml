@@ -1,6 +1,7 @@
 version: 2.1
 orbs:
   aws-cli: circleci/aws-cli@3.1.1
+  rsync: aplazame/rsync@0.0.17
 workflows:
   test: # This is the name of the workflow, feel free to change it to better match your workflow.
     jobs:
@@ -14,7 +15,7 @@ jobs:
 #      - python/install-packages:    ## CI error ... test'Cannot find orb 'python' looking for command named 'python/install-packages'
 #          pkg-manager: pip
       - run:
-          name: Install Python deps 
+          name: Install dependencies 
           command: |
             pip install -r requirements.txt
             python --version
@@ -22,10 +23,6 @@ jobs:
             npm --version
             echo "installing ipfs-car..."
             sudo npm install -g ipfs-car
-# sudo apt install nodejs npm
-# npm install -g ipfs-car
-# python3 -m venv venv
-# . venv/bin/activate
       - run: echo "Testing Packer..."
       - run:
           name: Run tests
