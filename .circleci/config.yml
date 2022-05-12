@@ -13,12 +13,14 @@ jobs:
       - checkout
 #      - python/install-packages:    ## CI error ... test'Cannot find orb 'python' looking for command named 'python/install-packages'
 #          pkg-manager: pip
-      - run: python --version
       - run:
           name: Install Python deps 
           command: |
             pip install -r requirements.txt
-            npm install -g ipfs-car
+            python --version
+            node --version
+            npm --version
+            npm install ipfs-car
 # sudo apt install nodejs npm
 # npm install -g ipfs-car
 # python3 -m venv venv
