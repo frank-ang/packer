@@ -2,7 +2,7 @@ version: 2.1
 orbs:
   aws-cli: circleci/aws-cli@3.1.1
 workflows:
-  test: # This is the name of the workflow, feel free to change it to better match your workflow.
+  build_and_test:
     jobs:
       - test
 jobs:
@@ -11,15 +11,14 @@ jobs:
       - image: cimg/python:3.10.4-node
     steps:
       - checkout
-#      - python/install-packages:    ## CI error ... test'Cannot find orb 'python' looking for command named 'python/install-packages'
-#          pkg-manager: pip
       - run:
           name: Install dependencies 
           command: |
             echo "## Installing Dependencies..."
-            pip install -r requirements.txt
-            sudo npm install -g ipfs-car
+            sudo apt-get update -y
             sudo apt-get install -y rsync
+            sudo npm install -g ipfs-car
+            pip install -r requirements.txt
       - run: echo "Testing Packer..."
       - run:
           name: Run tests
