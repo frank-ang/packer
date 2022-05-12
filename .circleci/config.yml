@@ -29,7 +29,8 @@ jobs:
             python -m pytest test/test_packer.py --junitxml=reports/test-report.xml
       - store_test_results:
           path: reports/
-#      - persist_to_workspace:
-#          root: ~/project
-#          paths:
-#            - .
+      - store_artifacts:
+          path: reports/test-report.xml
+          destination: pytest-report.xml
+      - store_artifacts:
+          path: reports/
