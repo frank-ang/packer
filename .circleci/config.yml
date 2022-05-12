@@ -1,7 +1,6 @@
 version: 2.1
 orbs:
-  python: circleci/python
-  node: circleci/node
+  aws-cli: circleci/aws-cli@3.1.1
 workflows:
   test: # This is the name of the workflow, feel free to change it to better match your workflow.
     jobs:
@@ -9,15 +8,17 @@ workflows:
 jobs:
   test:
     docker:
-      - image: circleci/python
+      - image: cimg/python:3.10.4-node
     steps:
       - checkout
       - python/install-packages:
           pkg-manager: pip
+      - run: python --version
       - run:
           name: Install Python deps 
           command: |
             pip install -r requirements.txt
+            npm install -g ipfs-car
 # sudo apt install nodejs npm
 # npm install -g ipfs-car
 # python3 -m venv venv
