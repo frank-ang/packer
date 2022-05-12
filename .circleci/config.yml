@@ -20,7 +20,8 @@ jobs:
             python --version
             node --version
             npm --version
-            npm install ipfs-car
+            echo "installing ipfs-car..."
+            sudo npm install -g ipfs-car
 # sudo apt install nodejs npm
 # npm install -g ipfs-car
 # python3 -m venv venv
