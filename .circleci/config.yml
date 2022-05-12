@@ -11,8 +11,8 @@ jobs:
       - image: cimg/python:3.10.4-node
     steps:
       - checkout
-      - python/install-packages:
-          pkg-manager: pip
+#      - python/install-packages:    ## CI error ... test'Cannot find orb 'python' looking for command named 'python/install-packages'
+#          pkg-manager: pip
       - run: python --version
       - run:
           name: Install Python deps 
