@@ -1,0 +1,36 @@
+version: 2.1
+orbs:
+  aws-cli: circleci/aws-cli@3.1.1
+workflows:
+  build_and_test:
+    jobs:
+      - test
+jobs:
+  test:
+    docker:
+      - image: cimg/python:3.10.4-node
+    steps:
+      - checkout
+      - run:
+          name: Install dependencies 
+          command: |
+            echo "## Installing Dependencies..."
+            sudo apt-get update -y
+            sudo apt-get install -y rsync
+            sudo npm install -g ipfs-car
+            pip install -r requirements.txt
+      - run: echo "Testing Packer..."
+      - run:
+          name: Run tests
+          command: |
+            make init_testdata
+            make test_all
+            make test_large
+            python -m pytest test/test_packer.py --junitxml=reports/test-report.xml
+      - store_test_results:
+          path: reports/
+      - store_artifacts:
+          path: reports/test-report.xml
+          destination: pytest-report.xml
+      - store_artifacts:
+          path: reports/
