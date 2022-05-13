@@ -78,3 +78,7 @@ init_certificate_pair:
 	mkdir -p ${CERTIFICATE_ROOT}
 	openssl req -x509 -nodes -days 1 -newkey rsa:2048 -keyout ${PRIVATE_KEY} -out ${CERTIFICATE} -subj "/C=ZZ/O=protocol.ai/OU=outercore/CN=packer"
 
+
+pytest:
+	@echo "🔬 running pytest tests"
+	python -m pytest test/test_packer.py -o log_cli=true -o log_cli_level=DEBUG --junitxml=test-report.xml.gitignore

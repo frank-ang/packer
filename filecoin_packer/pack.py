@@ -1,8 +1,8 @@
-import os,re, logging, shutil, glob
-from pickle import TRUE
-from subprocess import CalledProcessError, check_output, STDOUT
+import glob, logging, os, re, shutil
 from collections import defaultdict
 from filecoin_packer.crypt import encrypt, decrypt
+from pickle import TRUE
+from subprocess import CalledProcessError, check_output, STDOUT
 
 class PackConfig:
     bin_max_bytes = 100
@@ -17,6 +17,10 @@ class PackConfig:
     ENCRYPTED_FILE_SUFFIX = ".encrypted"
     key_path = None
 
+    @classmethod
+    def from_args(cls, args):
+        return cls(args.source_path, args.output_path, args.staging_base_path, args.binsize, args.args.filemaxsize, args.key)
+
     def __init__(self, source_path, output_path, staging_base_path, bin_max_bytes, file_max_bytes, key_path):
         self.source_path = source_path
         self.output_path = output_path
@@ -26,6 +30,7 @@ class PackConfig:
         self.file_max_bytes = file_max_bytes
         self.exclude_patterns = [".DS_Store"]
         self.key_path = key_path
+
 
 class Bin:
     bin_id = 0
@@ -39,7 +44,8 @@ class Bin:
     def bin_name(self):
         return "CAR{}".format(self.bin_id)
 
-def pack_large_file_to_staging(filepath, config, bin_list):
+
+def pack_large_file_to_staging(filepath, config, bin_list) -> None:
     """
     Split large file, move to staging, encrypt. Simple lexical bin-packing.
     """
@@ -85,7 +91,7 @@ def pack_large_file_to_staging(filepath, config, bin_list):
             chunk = orig.read(config.file_max_bytes)
 
 
-def bin_source_directory(path, config, bin_list):
+def bin_source_directory(path, config, bin_list) -> None:
     """
     Traverse the specified path, 
     copy files into maximum-sized bins of subdirectories under the config staging path.
@@ -162,7 +168,7 @@ def bin_source_directory(path, config, bin_list):
             raise Exception("Entry is not dir or file type.")
 
 
-def pack_staging_to_car(config):
+def pack_staging_to_car(config) -> None:
     """
     Processes the specified staging path, 
     copying files into maximum-sized bins of subdirectories within the destination path.
@@ -186,7 +192,7 @@ def pack_staging_to_car(config):
             raise Exception(e.output) from e
 
 
-def unpack_car_to_staging(config):
+def unpack_car_to_staging(config) -> None:
     """
     Takes a bunch of CAR files from a source directory, and unpacks into the staging directory.
     """
@@ -227,7 +233,8 @@ def unpack_car_to_staging(config):
         except CalledProcessError as e:
             raise Exception(e.output) from e
 
-def join_large_files(config):
+
+def join_large_files(config) -> None:
     logging.debug("# join_large_files()")
     SPLIT_FILE_PATTERN = config.staging_consolidation_path + "/**/*.split.[0-9]*"
     split_file_paths = sorted(glob.glob(SPLIT_FILE_PATTERN, recursive=True))
@@ -236,7 +243,7 @@ def join_large_files(config):
     # Find all the part files for each split file.
     for part_file_path in split_file_paths:
         # Extract the original filename from the part file.
-        LARGE_FILENAME_REGEX = "(.+?)\.split\.[0-9]+?"
+        LARGE_FILENAME_REGEX = "(.+?)\\.split\\.[0-9]+?"
         large_filename = re.search(LARGE_FILENAME_REGEX, part_file_path).group(1)
         large_filename = os.path.normpath(os.path.join(config.staging_consolidation_path, large_filename))
         part_file_path = os.path.normpath(os.path.join(config.staging_consolidation_path, part_file_path))
@@ -255,7 +262,8 @@ def join_large_files(config):
                     outfile.write(infile.read(chunk))
                 os.remove(part_file_path)
 
-def combine_files_to_output(config):
+
+def combine_files_to_output(config) -> None:
     logging.debug("# combine_files_to_output()")
     staging_dir = os.path.abspath(os.path.normpath(config.staging_consolidation_path)) + "/"
     output_dir_path = os.path.abspath(config.output_path) + "/"
@@ -269,7 +277,8 @@ def combine_files_to_output(config):
     except CalledProcessError as e:
             raise Exception(e.output) from e
 
-def decrypt_staging_files(dir_path, config):
+
+def decrypt_staging_files(dir_path, config) -> None:
     """
     Traverse into the directory path and decrypt files in-place.
     """

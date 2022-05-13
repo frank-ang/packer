@@ -26,8 +26,7 @@ jobs:
             make init_testdata
             make test_all
             make test_large
-            . venv/bin/activate
-            python -m pytest test/test_packer.py --junitxml=reports/test-report.xml
+            python -m pytest test/test_packer.py -o log_cli=true -o log_cli_level=INFO --junitxml=reports/test-report.xml
       - store_test_results:
           path: reports/
       - store_artifacts:

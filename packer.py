@@ -3,10 +3,12 @@ from filecoin_packer.pack import Bin, PackConfig
 from filecoin_packer.pack import bin_source_directory, pack_staging_to_car
 from filecoin_packer.pack import unpack_car_to_staging, join_large_files, decrypt_staging_files, combine_files_to_output
 
+
 logging.basicConfig(
         format="%(asctime)s %(levelname)-8s %(message)s",
         datefmt="%d-%b-%y %H:%M:%S",
         level=logging.DEBUG)
+
 
 def init_argparse() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(prog='PROG', 
@@ -24,6 +26,7 @@ def init_argparse() -> argparse.ArgumentParser:
     parser.add_argument('-k', '--key', required=False, help='Cryptographic Key or Certificate')
     return parser
 
+
 def main() -> None:
     parser = init_argparse()
     args = parser.parse_args()
@@ -37,44 +40,53 @@ def main() -> None:
 
     config = PackConfig(source_path, output_path, tmp_path, binsize, filemaxsize, key)
     if args.pack:
-        # Pack up the source directory for transport into Filecoin via CAR format.
-        logging.info("Start packing. Args: {}".format(args.pack))
-        logging.debug("Scanning Path:" + source_path)
-        try:
-            bin_list = [Bin(0)]
-
-            # 1. Pack the source directory into binned staging directories. Split large files. Encrypt files.
-            bin_source_directory(source_path, config, bin_list)
-
-            # cleanup. 
-            logging.debug("cleaning up encryption temp dir: {}".format(os.path.join(config.staging_base_path, config.STAGING_ENCRYPTION_SUBDIR)))
-            shutil.rmtree(os.path.join(config.staging_base_path, config.STAGING_ENCRYPTION_SUBDIR), ignore_errors=True)
-
-            # 2. Pack the staging directories into CAR files into output directory.
-            pack_staging_to_car(config)
-            logging.debug("ID of last bin: {}".format(bin_list[-1].bin_id))
-
-        except Exception as e:
-            logging.debug(e)
-            raise
+        pack(config)
 
     elif args.unpack:
-        # Pack up the source directory of CAR files into the output, with extraction and reassembly.
-        logging.info("Start unpacking. Args: {}".format(args.pack))
-        try:
-            # 1. Unpack the CAR files to binned staging directories.
-            unpack_car_to_staging(config)
+        unpack(config)
 
-            # 2. Decrypt files.
-            decrypt_staging_files(config.staging_consolidation_path, config)
 
-            # 3. Join split file parts into original large files.
-            join_large_files(config)
+def pack(config) -> None:
+    # Pack up the source directory for transport into Filecoin via CAR format.
+    logging.debug("Scanning Path:" + config.source_path)
+    try:
+        bin_list = [Bin(0)]
 
-            # 4. Combine the binned staging directories to the output path.
-            combine_files_to_output(config)
+        # 1. Pack the source directory into binned staging directories. Split large files. Encrypt files.
+        bin_source_directory(config.source_path, config, bin_list)
 
-        except Exception as e:
-            logging.debug(e)
-            raise
-main()
+        # cleanup. 
+        logging.debug("cleaning up encryption temp dir: {}".format(os.path.join(config.staging_base_path, config.STAGING_ENCRYPTION_SUBDIR)))
+        shutil.rmtree(os.path.join(config.staging_base_path, config.STAGING_ENCRYPTION_SUBDIR), ignore_errors=True)
+
+        # 2. Pack the staging directories into CAR files into output directory.
+        pack_staging_to_car(config)
+        logging.debug("ID of last bin: {}".format(bin_list[-1].bin_id))
+
+    except Exception as e:
+        logging.debug(e)
+        raise
+
+
+def unpack(config) -> None:
+    # Pack up the source directory of CAR files into the output, with extraction and reassembly.
+    try:
+        # 1. Unpack the CAR files to binned staging directories.
+        unpack_car_to_staging(config)
+
+        # 2. Decrypt files.
+        decrypt_staging_files(config.staging_consolidation_path, config)
+
+        # 3. Join split file parts into original large files.
+        join_large_files(config)
+
+        # 4. Combine the binned staging directories to the output path.
+        combine_files_to_output(config)
+
+    except Exception as e:
+        logging.debug(e)
+        raise
+
+
+if __name__ == "__main__":
+    main()
