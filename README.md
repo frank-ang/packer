@@ -75,14 +75,52 @@ OPTIONS
 ```
 
 
-# Prerequisites
+# Installation
 
-Install ipfs-car Node package globally.
+## Prerequisites
+
+Ensure dependencies are installed.
+* Linux OS (tested on Ubuntu and MacOS)
+* Python 3.10+
+* Rsync
+* NodeJS ipfs-car
+
 ```bash
-npm install -g ipfs-car
+sudo apt-get update -y
+sudo apt-get install -y rsync
+sudo npm install -g ipfs-car
+pip install -r requirements.txt
 ```
 
-# TODO notes.
+## Install.
+
+Clone this repo.
+
+# Encryption Keys
+
+Packer currently uses RSA AES encryption. Bring your own keys, or generate a key pair (explained below). 
+
+Users are responsible for observing key management best-practices, please store your keys securely.
+
+## Generate private key and public certificate.
+
+Interactive
+```
+openssl req -x509 -nodes -days 36500 -newkey rsa:2048 -keyout private_key.pem -out certificate.pem
+```
+
+Non-interactive:
+```
+openssl req -x509 -nodes -days 36500 -newkey rsa:2048 -keyout private_key.pem -out certificate.pem -subj "/C=ZZ/O=protocol.ai/OU=outercore/CN=packer"
+```
+
+# License
+
+This project is licensed under the terms of the [MIT](./LICENSE) license.
+
+---
+
+# Misc notes. (TODO cleanup notes)
 ## Sample GPG Encryption / Decryption
 
 ### Prep keys
@@ -171,7 +209,7 @@ openssl smime -encrypt -binary -aes-256-cbc -in top_secret.txt -out top_secret.t
 openssl smime -decrypt -binary -in top_secret.txt.enc -inform DER -out top_secret.txt.decrypted -inkey private_key.pem
 ```
 
-### Test with larger file.
+### Test openssl with larger file.
 
 ```
 # create 10MB file (1024KB * 10).
