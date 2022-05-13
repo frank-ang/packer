@@ -26,6 +26,7 @@ jobs:
             make init_testdata
             make test_all
             make test_large
+            . venv/bin/activate
             python -m pytest test/test_packer.py --junitxml=reports/test-report.xml
       - store_test_results:
           path: reports/
