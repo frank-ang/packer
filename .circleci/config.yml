@@ -15,7 +15,7 @@ jobs:
       - run:
           name: Dump environment
           command: |
-            env
+            printenv
             pwd
             df -h
             mount
