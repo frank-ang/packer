@@ -11,6 +11,15 @@ jobs:
       - image: cimg/python:3.10.4-node
     steps:
       - checkout
+      - env
+      - run:
+          name: Dump environment
+          command: |
+            env
+            pwd
+            df -h
+            mount
+            lsblk
       - run:
           name: Install dependencies 
           command: |

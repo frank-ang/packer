@@ -38,7 +38,6 @@ test_pack_medium: MAX_FILE_SIZE=100
 test_pack_large: BIN_SIZE=34091302912
 test_pack_large: MAX_FILE_SIZE=34091302912
 test_pack_large: SOURCE_PATH=${LARGE_DATA_PATH}
-test_unpack_large: SOURCE_PATH=${LARGE_DATA_PATH}
 
 test_pack test_pack_small test_pack_medium test_pack_large:
 	@echo
@@ -50,6 +49,8 @@ test_pack test_pack_small test_pack_medium test_pack_large:
 	@echo "📦📦📦📦 Testing Packing. Max file size: ${MAX_FILE_SIZE} 📦📦📦📦"
 	time python ./packer.py --pack --source ${SOURCE_PATH} --tmp ${STAGING_PATH} --output ${CAR_PATH} --binsize ${BIN_SIZE} --filemaxsize $(MAX_FILE_SIZE) --key $(CERTIFICATE)
 
+test_unpack_large: SOURCE_PATH=${LARGE_DATA_PATH}
+
 test_unpack test_unpack_small test_unpack_medium test_unpack_large:
 	@rm -rf ${STAGING_PATH}/*
 	@rm -rf ${RESTORE_PATH}/*
@@ -58,20 +59,32 @@ test_unpack test_unpack_small test_unpack_medium test_unpack_large:
 	@echo "📦📦📦📦 Verifying test output..."
 	@(diff --brief --recursive ${SOURCE_PATH} ${RESTORE_PATH} && echo "Test: $@, Result: [PASSED]") || (echo "Test: $@, Result: [FAILED]" && exit 1)
 
+
 test_clean:
 	@echo "🧹 cleaning... 🧹"
-	@rm -rf ${STAGING_PATH}/*
-	@rm -rf ${CAR_PATH}/*
-	@rm -rf ${RESTORE_PATH}/*
-	@rm -rf ${LARGE_DATA_PATH}/*
+	@rm -rf ${STAGING_PATH}
+	@rm -rf ${CAR_PATH}
+	@rm -rf ${RESTORE_PATH}
+	@rm -rf ${LARGE_DATA_PATH}
 
-init_testdata: init_certificate_pair
+
+init_testdata: test_clean init_certificate_pair 
+# for 1TB test: 9x100GB 90x1GB 9000x1MB  1000000x1KB 
 	@echo "🛠 creating test dataset for test, in: ${LARGE_DATA_PATH} 🛠"
-# TODO increase test data volume.
-	@for n in `seq -s " " -f %02g 1 3`; do \
-		mkdir -p "${LARGE_DATA_PATH}/$$n"; \
-		time dd if=/dev/urandom of="${LARGE_DATA_PATH}/$$n/dummy-1G-$$n" bs=64M count=16 iflag=fullblock; \
-	done
+	@echo "##🛠 creating 1KB files..."
+	@./test/gen-large-test-data.sh -c 10 -s 1024 -p kilo &
+	@echo "##🛠 creating 1MB files..."
+	@./test/gen-large-test-data.sh -c 2 -s 1048576 -p mega &
+	@echo "##🛠 creating 1GB files..."
+	./test/gen-large-test-data.sh -c 1 -s 1073741824 -p giga &
+#@echo "##🛠 creating 100GB files..."
+#./test/gen-large-test-data.sh -c 1 -s 107374182400 -p 100giga &
+	@wait
+	@echo "completed test data creation."
+
+upload_testdata:
+	@echo "Uploading test dataset from ${LARGE_DATA_PATH} to AWS S3..."
+	aws s3 sync ${LARGE_DATA_PATH} s3://filecoin-packer/testdata/ --delete --dryrun
 
 init_certificate_pair:
 	@echo "🔑 generating RSA certificate pair..."
