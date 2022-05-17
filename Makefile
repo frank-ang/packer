@@ -93,6 +93,9 @@ init_largedata: init_testdata
 #./test/gen-large-test-data.sh -c 1 -s 107374182400 -p 100giga &
 #	@wait # is this causing: "make: *** [init_testdata] Error 1" ?
 	@echo "completed test data creation."
+	ls -lH "${LARGE_DATA_PATH}/1"
+	ls -lH "${LARGE_DATA_PATH}/2"
+	du -sh "${LARGE_DATA_PATH}"
 
 upload_testdata:
 	@echo "Uploading test dataset from ${LARGE_DATA_PATH} to AWS S3..."
