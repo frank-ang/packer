@@ -40,7 +40,8 @@ jobs:
       - run:
           name: Run large test
           command: |
-            echo "## Running large ..."
+            echo "## Running large tests..."
+            make init_largedata
             make test_large
       - store_test_results:
           path: reports/

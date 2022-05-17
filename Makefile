@@ -68,7 +68,16 @@ test_clean:
 	@rm -rf ${LARGE_DATA_PATH}
 
 
-init_testdata: test_clean init_certificate_pair 
+init_testdata: test_clean init_certificate_pair
+
+init_largedata: init_testdata
+# Execution time for 200GB:
+#  * 10 mins on MacOS
+#  * TODO on CircleCi
+#
+# Cost of preserving 200GB test data on AWS S3. Shows that AWS Egress cost is many multiples of S3 standard storage cost.
+# *  https://calculator.aws/#/estimate?id=121d54cc893c4fc91220b34547dd37af9d80cbdd
+#
 # for 1TB test: 9x100GB 90x1GB 9000x1MB  1000000x1KB 
 # for 200GB test: 1000*1K + 99*1M + 2*1G + 1*50G =  52 G
 	@echo "🛠 creating test dataset for test, in: ${LARGE_DATA_PATH} 🛠"
