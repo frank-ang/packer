@@ -42,7 +42,9 @@ jobs:
           command: |
             echo "## Running large tests..."
             make init_largedata
+            no_output_timeout: 30m
             make test_large
+            no_output_timeout: 30m
       - store_test_results:
           path: reports/
       - store_artifacts:
