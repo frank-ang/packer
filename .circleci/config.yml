@@ -19,6 +19,7 @@ jobs:
             df -h
             mount
             lsblk
+            cat /proc/meminfo
       - run:
           name: Install dependencies 
           command: |
