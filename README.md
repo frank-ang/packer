@@ -36,7 +36,7 @@ Cryptographic methods:
 
 Post-MVP, it will be essential to run scalability tests and benchmarks.  
 
-# Usage concept:
+# Usage:
 
 ```bash
 NAME
@@ -113,6 +113,18 @@ Non-interactive:
 ```
 openssl req -x509 -nodes -days 36500 -newkey rsa:2048 -keyout private_key.pem -out certificate.pem -subj "/C=ZZ/O=protocol.ai/OU=outercore/CN=packer"
 ```
+
+# Backlog.
+
+Improvements:
+* AWS Packer AMI with CloudFormation template using IAM instance profile for EFS use-case, on-prem NFS via DX use-case, S3 use-case.
+* S3 support.
+* Compression.
+* Filename / dirname obfuscation. (current implementation is in clear)
+* Output manifest of file-car mappings.
+
+See [issues](https://github.com/frank-ang/packer/issues).
+
 
 # License
 
@@ -246,7 +258,4 @@ Check with Angelo about any prior similar work. Stefaan: "Box interface"?.
 
 ## Roadmap / backlog.
 
-* AWS Packer AMI with CloudFormation template using IAM instance profile for EFS use-case, on-prem NFS via DX use-case, S3 use-case.
-* S3 support.
-* Compression.
 

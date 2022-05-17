@@ -19,11 +19,14 @@ jobs:
             sudo apt-get install -y rsync
             sudo npm install -g ipfs-car
             pip install -r requirements.txt
-      - run: echo "Testing Packer..."
+      - run:
+          name: Init Test Data
+          command: |
+            make init_testdata
       - run:
           name: Run tests
           command: |
-            make init_testdata
+            echo "## Running Tests..."
             make test_all
             make test_large
             python -m pytest test/test_packer.py -o log_cli=true -o log_cli_level=INFO --junitxml=reports/test-report.xml
