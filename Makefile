@@ -88,7 +88,7 @@ init_largedata: init_testdata
 	@echo "##🛠 creating 1GB files..."
 	./test/gen-large-test-data.sh -c 2 -s 1073741824 -p giga &
 	@echo "##🛠 creating 50GB files..."
-	./test/gen-large-test-data.sh -c 1 -s 53687091200 -p 50giga
+	./test/gen-large-test-data.sh -c 1 -s 35000000000 -p 35giga
 #@echo "##🛠 creating 100GB files..."
 #./test/gen-large-test-data.sh -c 1 -s 107374182400 -p 100giga &
 #	@wait # is this causing: "make: *** [init_testdata] Error 1" ?
