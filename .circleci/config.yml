@@ -11,7 +11,6 @@ jobs:
       - image: cimg/python:3.10.4-node
     steps:
       - checkout
-      - env
       - run:
           name: Dump environment
           command: |
