@@ -70,16 +70,19 @@ test_clean:
 
 init_testdata: test_clean init_certificate_pair 
 # for 1TB test: 9x100GB 90x1GB 9000x1MB  1000000x1KB 
+# for 200GB test: 1000*1K + 99*1M + 2*1G + 1*50G =  52 G
 	@echo "🛠 creating test dataset for test, in: ${LARGE_DATA_PATH} 🛠"
 	@echo "##🛠 creating 1KB files..."
-	@./test/gen-large-test-data.sh -c 10 -s 1024 -p kilo &
+	./test/gen-large-test-data.sh -c 1000 -s 1024 -p kilo &
 	@echo "##🛠 creating 1MB files..."
-	@./test/gen-large-test-data.sh -c 2 -s 1048576 -p mega &
+	./test/gen-large-test-data.sh -c 99 -s 1048576 -p mega &
 	@echo "##🛠 creating 1GB files..."
-	./test/gen-large-test-data.sh -c 1 -s 1073741824 -p giga &
+	./test/gen-large-test-data.sh -c 2 -s 1073741824 -p giga &
+	@echo "##🛠 creating 50GB files..."
+	./test/gen-large-test-data.sh -c 1 -s 53687091200 -p 50giga
 #@echo "##🛠 creating 100GB files..."
 #./test/gen-large-test-data.sh -c 1 -s 107374182400 -p 100giga &
-	@wait
+#	@wait # is this causing: "make: *** [init_testdata] Error 1" ?
 	@echo "completed test data creation."
 
 upload_testdata:

@@ -37,7 +37,7 @@ def decrypt(file_path, config):
     if not file_path.endswith(config.ENCRYPTED_FILE_SUFFIX):
         return None
     decrypted_file_path = file_path.removesuffix(config.ENCRYPTED_FILE_SUFFIX)
-    command = "openssl smime -decrypt -binary -in {} -inform DER -out {} -inkey {}".format(file_path, decrypted_file_path, config.key_path)
+    command = "openssl smime -decrypt -binary -stream -bufsize 4096 -in {} -inform DER -out {} -inkey {}".format(file_path, decrypted_file_path, config.key_path)
     logging.debug("## executing command: {}".format(command))
     # E.g. openssl smime -decrypt -binary -in junk.dat.enc -inform DER -out junk.dat.decrypted -inkey private_key.pem
     try:

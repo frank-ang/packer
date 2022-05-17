@@ -34,10 +34,14 @@ jobs:
       - run:
           name: Run tests
           command: |
-            echo "## Running Tests..."
+            echo "## Running regular tests..."
             make test_all
-            make test_large
             python -m pytest test/test_packer.py -o log_cli=true -o log_cli_level=INFO --junitxml=reports/test-report.xml
+      - run:
+          name: Run large test
+          command: |
+            echo "## Running large ..."
+            make test_large
       - store_test_results:
           path: reports/
       - store_artifacts:
