@@ -15,6 +15,9 @@ MAX_FILE_SIZE:=32000000000
 CERTIFICATE_ROOT:=./test/security.rsa.gitignore
 CERTIFICATE:=${CERTIFICATE_ROOT}/certificate.pem
 PRIVATE_KEY:=${CERTIFICATE_ROOT}/private_key.pem
+AWS_CFN_TEMPLATE_FILE:=cloudformation.yml
+
+-include config.mk.gitignore
 
 help:
 	echo "Packer makefile"
@@ -87,7 +90,7 @@ init_largedata: init_testdata
 	./test/gen-large-test-data.sh -c 99 -s 1048576 -p mega &
 	@echo "##🛠 creating 1GB files..."
 	./test/gen-large-test-data.sh -c 2 -s 1073741824 -p giga &
-	@echo "##🛠 creating 35GB files..."
+	@echo "##🛠 creating 35GB file..."
 	./test/gen-large-test-data.sh -c 1 -s 35000000000 -p 35giga
 #@echo "##🛠 creating 100GB files..."
 #./test/gen-large-test-data.sh -c 1 -s 107374182400 -p 100giga &
@@ -110,3 +113,17 @@ init_certificate_pair:
 pytest:
 	@echo "🔬 running pytest tests"
 	python -m pytest test/test_packer.py -o log_cli=true -o log_cli_level=DEBUG --junitxml=test-report.xml.gitignore
+
+
+create_load_test_instance:
+	@echo "Launching AWS EC2 instance for load test".
+	aws cloudformation validate-template --template-body file://${AWS_CFN_TEMPLATE_FILE}
+	aws cloudformation deploy --capabilities CAPABILITY_IAM \
+      --template-file ./${AWS_CFN_TEMPLATE_FILE}  \
+      --parameter-overrides "VPC=${AWS_VPC}" "AZ=${AWS_AZ}" "SubnetId=${AWS_SUBNET}" \
+         "KeyPair=${AWS_KEY_PAIR}" "SecurityGroup=${AWS_SECURITY_GROUP}" "InstanceProfile=${AWS_INSTANCE_PROFILE}" \
+      --stack-name "filecoin-packer-test" \
+      --tags "project=filecoin"
+
+delete_load_test_instance:
+	aws cloudformation delete-stack --stack-name filecoin-packer-test
