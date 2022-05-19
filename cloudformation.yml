@@ -51,7 +51,7 @@ Resources:
       - !Ref SecurityGroup
       KeyName: !Ref KeyPair
       # TODO season to taste
-      InstanceType: r5.large
+      InstanceType: r5.2xlarge
       AvailabilityZone: !Ref AZ
       ImageId: !Ref LatestUbuntuFocalAMI
       BlockDeviceMappings:
@@ -59,7 +59,7 @@ Resources:
           Ebs:
             VolumeType: gp3
             # TODO season to taste
-            VolumeSize: '200'
+            VolumeSize: '1000'
       Tags:
         - Key: Name
           Value: packer-test

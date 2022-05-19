@@ -8,22 +8,25 @@
 #   gen-large-test-data.sh -c 2 -s 1073741824 - giga
 #
 
-while getopts c:s:p: flag
+while getopts c:s:p:d: flag
 do
     case "${flag}" in
         c) filecount=${OPTARG};;
         s) filesize=${OPTARG};;
         p) prefix=${OPTARG};;
+        d) dirname=${OPTARG};;
     esac
 done
 
-echo "count of files to generate: $filecount";
-echo "size per file (Bytes): $filesize";
+echo "count of files to generate: $filecount; size per file (Bytes): $filesize; dir: $dir; prefix: $prefix";
 
 [[ -z "$filecount" ]] && { echo "filecount is required" ; exit 1; }
 [[ -z "$filesize" ]] && { echo "filesize is required" ; exit 1; }
+[[ -z "$prefix" ]] && { echo "prefix is required" ; exit 1; }
+[[ -z "$dirname" ]] && { echo "dirname is required" ; exit 1; }
 
-LARGE_DATA_PATH=`dirname "$0"`"/large-source"
+# LARGE_DATA_PATH=`dirname "$0"`"/large-source"
+LARGE_DATA_PATH=$dirname
 
 while [ $filecount -gt 0 ]; do
     echo "generating data for test file: $filecount"
