@@ -9,6 +9,9 @@ jobs:
   test:
     docker:
       - image: cimg/python:3.10.4-node
+    # larger resource, because decryption is memory-intensive. 
+    # 2xlarge: 2 vCPU, 40GB RAM https://circleci.com/docs/2.0/configuration-reference/#docker
+    resource_class: 2xlarge+
     steps:
       - checkout
       - run:
@@ -43,9 +46,7 @@ jobs:
           command: |
             echo "## Running large test..."
             make init_largedata
-            no_output_timeout: 10m
             make test_large
-            no_output_timeout: 10m
       - store_test_results:
           path: reports/
       - store_artifacts:

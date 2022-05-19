@@ -98,10 +98,10 @@ init_xldata: init_testdata
 # Generate random test data on-demand, 
 # for 1TB test: 9x100GB 90x1GB 9000x1MB  1000000x1KB 
 # for 200GB test: 1000*1K + 99*1M + 2*1G + 1*50G =  52 G
-# Execution time for 200GB:
-#  * Macbook pro: 10 mins 
-#  * AWS EC2 2xlarge, 1000GB gp3 EBS volume: TODO mins
-#  * CircleCi: Not feasible, Disk size max 100GB.
+# Execution times:
+#  * 200GB on Macbook pro: ~10m
+#  * 200GB on AWS (EC2 2xlarge, 1000GB gp3 EBS): 29m27.544s
+#  * 37GB on CircleCi (100GB disk size max limit): 
 #
 # Not cost-optimal to retrieve pre-generated test data from S3. 
 # E.g. 200GB on AWS S3, egress once per month to Internet. 

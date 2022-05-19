@@ -18,7 +18,7 @@ def encrypt(file_path, destination_path, config):
         else:
             encrypted_file_path = destination_path
 
-    command = "openssl smime -encrypt -binary -aes-256-cbc -in {} -out {} -outform DER {}".format(file_path, encrypted_file_path, config.key_path)
+    command = "openssl -encrypt -binary -aes-256-cbc -in {} -out {} -outform DER {}".format(file_path, encrypted_file_path, config.key_path)
     logging.debug("## executing command: {}".format(command))
     # E.g. openssl smime -encrypt -binary -aes-256-cbc -in junk.dat -out junk.dat.enc -outform DER certificate.pem
     try:
@@ -30,6 +30,9 @@ def encrypt(file_path, destination_path, config):
 def decrypt(file_path, config):
     """
     Decrypts a file, returns the path to the decrypted file.
+    Uses openssl S/MIME envelope to "contain symmetric keys
+    which are to be decrypted with a user's private key." (S/MIME, RFC2311)
+    Machine memory should exceed max file size, since S/MIME decryption happens in-memory.
     """
     logging.debug("# decrypt({})".format(file_path))
     if config.key_path is None:
@@ -37,9 +40,11 @@ def decrypt(file_path, config):
     if not file_path.endswith(config.ENCRYPTED_FILE_SUFFIX):
         return None
     decrypted_file_path = file_path.removesuffix(config.ENCRYPTED_FILE_SUFFIX)
-    command = "openssl smime -decrypt -binary -stream -in {} -inform DER -out {} -inkey {}".format(file_path, decrypted_file_path, config.key_path)
+    command = "openssl smime -decrypt -binary -in {} -inform DER -out {} -inkey {}".format(file_path, decrypted_file_path, config.key_path)
     logging.debug("## executing command: {}".format(command))
-    # E.g. openssl smime -decrypt -binary -in junk.dat.enc -inform DER -out junk.dat.decrypted -inkey private_key.pem
+    # E.g. 
+    # openssl smime -decrypt -binary -in junk.dat.enc -inform DER -out junk.dat.decrypted -inkey private_key.pem
+
     try:
         cmd_out = check_output(command, stderr=STDOUT, shell=True)
     except CalledProcessError as e:
