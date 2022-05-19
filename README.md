@@ -256,6 +256,22 @@ https://github.com/ipfs/devgrants/blob/master/MICROGRANTS.md
 
 Check with Angelo about any prior similar work. Stefaan: "Box interface"?.
 
-## Roadmap / backlog.
+## BUGS.
 
+TODO investigate
 
+> init_largedata Error 1 
+
+```
+# time make init_largedata
+...
+1073741824 bytes (1.1 GB, 1.0 GiB) copied, 14.4031 s, 74.5 MB/s
+34179687+0 records in
+34179687+0 records out
+34999999488 bytes (35 GB, 33 GiB) copied, 333.105 s, 105 MB/s
+make: *** [Makefile:94: init_largedata] Error 1
+
+real	5m33.166s
+user	0m26.941s
+sys	4m25.409s
+```
