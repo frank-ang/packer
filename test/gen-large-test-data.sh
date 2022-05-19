@@ -34,3 +34,4 @@ while [ $filecount -gt 0 ]; do
     dd if=/dev/urandom of="$basedir/$prefix-$filecount" bs=$bs count=$count iflag=fullblock
     ((filecount-=1))
 done
+echo "done generating test data of file size: $filesize bytes"

@@ -73,75 +73,33 @@ test_clean:
 
 init_testdata: test_clean init_certificate_pair
 
-init_foo: init_testdata
-	@echo "##🛠 creating 1K file..."
-	./test/gen-large-test-data.sh -c 1000 -s 1024 -p kilo
-#	#FSIZE=$$(stat -f%z ./test/large-source/1/kilo-1); \#
-#	#if [ $$FSIZE -lt 1000 ]; then \
-#		echo "filesize too small" ; exit 1 ; \
-#	fi
-
 
 init_largedata: init_testdata
-# Execution time for 200GB:
-#  * 10 mins on MacOS
-#  * TODO on CircleCi
-#
-# Cost of preserving 200GB test data on AWS S3. Shows that AWS Egress cost is many multiples of S3 standard storage cost.
-# *  https://calculator.aws/#/estimate?id=121d54cc893c4fc91220b34547dd37af9d80cbdd
-#
+# Generate random test data on-demand, 
 # for 1TB test: 9x100GB 90x1GB 9000x1MB  1000000x1KB 
 # for 200GB test: 1000*1K + 99*1M + 2*1G + 1*50G =  52 G
+# Execution time for 200GB:
+#  * Macbook pro: 10 mins 
+#  * EC2: TODO mins
+#  * CircleCi: Not feasible, Disk size max 100GB.
+#
+# Not cost-optimal to retrieve pre-generated test data from S3. 
+# E.g. 200GB on AWS S3, egress once per month to Internet. 
+# Finding: AWS Egress cost will be multiples of S3 standard storage cost.
+# *  https://calculator.aws/#/estimate?id=121d54cc893c4fc91220b34547dd37af9d80cbdd
+#
 	@echo "🛠 creating test dataset for test, in: ${LARGE_DATA_PATH} 🛠"
-	@echo "##🛠 creating 1KB files..."
+	@echo "##🛠 creating 1KiB files..."
 	./test/gen-large-test-data.sh -c 1000 -s 1024 -p kilo
-	@echo "##🛠 creating 1MB files..."
-	./test/gen-large-test-data.sh -c 99 -s 1048576 -p mega
-	@echo "##🛠 creating 1GB files..."
-	./test/gen-large-test-data.sh -c 2 -s 1073741824 -p giga
-# Ignore error. with "-" ?
-	@echo "##🛠 creating 35GB file..."
-	./test/gen-large-test-data.sh -c 1 -s 35000000000 -p 35giga
-#	stat -f%z ./test/large-source/1/35giga-1
-# 
-#
-# An error is encountered at this stage:
-#  
-# 34999999488 bytes (35 GB, 33 GiB) copied, 333.105 s, 105 MB/s
-# make: *** [Makefile:94: init_largedata] Error 1
-#
-# However test data appears to be created correctly.
-#
-# Also, running gen-large-test-data.sh manually is successful...
-# ```
-# ...
-# 34999999488 bytes (35 GB, 33 GiB) copied, 281.949 s, 124 MB/s
-# ```
-# Investigate the problem somewhere between Makefile -> bash script.
-#
-# ... if it isn't a fatal error, should we ignore it?
-#
-# root@ip-10-0-0-205:~/packer/test# du -sh large-source/
-# 35G	large-source/
-# root@ip-10-0-0-205:~/packer/test# find large-source/ | wc -l
-# 2103
-# root@ip-10-0-0-205:~/packer/test# ls -lH large-source/1
-# total 35229300
-# -rw-r--r-- 1 root root 34999999488 May 18 15:10 35giga-1
-# -rw-r--r-- 1 root root  1073741824 May 18 15:05 giga-1
-# -rw-r--r-- 1 root root        1024 May 18 15:04 kilo-1
-# -rw-r--r-- 1 root root     1048576 May 18 15:04 mega-1
-# 
-#
-#
-#@echo "##🛠 creating 100GB files..."
-#./test/gen-large-test-data.sh -c 1 -s 107374182400 -p 100giga &
-#	@wait # is this causing: "make: *** [init_testdata] Error 1" ?
-#
-# Due to error, the following is not executed...
+	@echo "##🛠 creating 1MiB files..."
+	./test/gen-large-test-data.sh -c 999 -s 1048576 -p mega
+	@echo "##🛠 creating 1GiB files..."
+	./test/gen-large-test-data.sh -c 99 -s 1073741824 -p giga
+	@echo "##🛠 creating 100GiB files..."
+	./test/gen-large-test-data.sh -c 1 -s 107374182400 -p 100giga
+
 	@echo "completed test data creation."
 	ls -lH "${LARGE_DATA_PATH}/1"
-	ls -lH "${LARGE_DATA_PATH}/2"
 	du -sh "${LARGE_DATA_PATH}"
 
 upload_testdata:
