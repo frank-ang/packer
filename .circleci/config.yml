@@ -34,7 +34,7 @@ jobs:
       - run:
           name: Init Test Data
           command: |
-            make init_testdata || true
+            make init_testdata
       - run:
           name: Run tests
           command: |

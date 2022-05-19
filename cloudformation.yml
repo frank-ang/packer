@@ -74,8 +74,11 @@ Resources:
           add-apt-repository ppa:deadsnakes/ppa -y
           apt update
           apt install python3.10 -y
+          apt install python3.10-distutils python3-apt -y
           apt install python-is-python3 -y
           apt install python3-pip -y
+          update-alternatives --install /usr/bin/python3 python3 /usr/bin/python3.10 40
+          pip install -r requirements.txt
           apt install nodejs npm -y
           npm install -g ipfs-car
           pwd
@@ -85,7 +88,6 @@ Resources:
           git fetch
           # TODO use master branch
           git switch test 
-          pip install -r requirements.txt
           echo "## Instance Setup completed" > ~/userdata-install.log
 
 Outputs:
