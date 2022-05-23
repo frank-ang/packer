@@ -4,14 +4,22 @@ orbs:
 workflows:
   build_and_test:
     jobs:
-      - test
-jobs:
-  test:
+      - tests
+
+executors:
+  my-executor:
     docker:
       - image: cimg/python:3.10.4-node
-    # larger resource, because decryption is memory-intensive. 
-    # 2xlarge: 2 vCPU, 40GB RAM https://circleci.com/docs/2.0/configuration-reference/#docker
+    ## larger resource, because decryption is memory-intensive. 
+    ## 2xlarge: 2 vCPU, 40GB RAM https://circleci.com/docs/2.0/configuration-reference/#docker
+    ## Appears to be a CircleCI paid feature.
     resource_class: 2xlarge+
+
+jobs:
+  tests:
+    #docker:
+    #  - image: cimg/python:3.10.4-node
+    executor: my-executor
     steps:
       - checkout
       - run:
