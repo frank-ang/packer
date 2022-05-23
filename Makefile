@@ -24,7 +24,7 @@ help:
 
 clean: test_clean
 
-test: test_pack test_unpack
+test: clean test_all
 
 test_all: test_small test_medium
 
@@ -33,10 +33,10 @@ test_medium: test_pack_medium test_unpack_medium
 test_large: test_pack_large test_unpack_large
 test_xl: test_pack_xl test_unpack_xl
 
-test_pack_small: BIN_SIZE=100
-test_pack_small: MAX_FILE_SIZE=10
+test_pack_small: BIN_SIZE=4096
+test_pack_small: MAX_FILE_SIZE=40
 
-test_pack_medium: BIN_SIZE=100
+test_pack_medium: BIN_SIZE=10000
 test_pack_medium: MAX_FILE_SIZE=100
 
 test_pack_large test_pack_xl: BIN_SIZE=34091302912
@@ -44,7 +44,7 @@ test_pack_large test_pack_xl: MAX_FILE_SIZE=34091302912
 test_pack_large: SOURCE_PATH=${LARGE_DATA_PATH}
 test_pack_xl: SOURCE_PATH=${XL_DATA_PATH}
 
-test_pack test_pack_small test_pack_medium test_pack_large test_pack_xl:
+test_pack_small test_pack_medium test_pack_large test_pack_xl:
 	@echo
 	@echo "🧹 cleaning... 🧹"
 	@rm -rf ${STAGING_PATH}/*
@@ -57,7 +57,7 @@ test_pack test_pack_small test_pack_medium test_pack_large test_pack_xl:
 test_unpack_large: SOURCE_PATH=${LARGE_DATA_PATH}
 test_unpack_xl: SOURCE_PATH=${XL_DATA_PATH}
 
-test_unpack test_unpack_small test_unpack_medium test_unpack_large test_unpack_xl:
+test_unpack_small test_unpack_medium test_unpack_large test_unpack_xl:
 	@rm -rf ${STAGING_PATH}/*
 	@rm -rf ${RESTORE_PATH}/*
 	@echo "📦📦📦📦 Testing Unpacking. Test: $@ 📦📦📦📦"
@@ -87,7 +87,7 @@ init_largedata: init_testdata
 	./test/gen-large-test-data.sh -c 10 -s 1048576 -p MiB -d ${LARGE_DATA_PATH}
 	@echo "##🛠 creating 1GiB files..."
 	./test/gen-large-test-data.sh -c 2 -s 1073741824 -p GiB -d ${LARGE_DATA_PATH}
-	@echo "##🛠 creating 35GiB files..."
+	@echo "##🛠 creating 20GiB files..."
 	./test/gen-large-test-data.sh -c 1 -s $$(( 35 * 1073741824 )) -p 35GiB -d ${LARGE_DATA_PATH}
 
 	@echo "completed test data creation."

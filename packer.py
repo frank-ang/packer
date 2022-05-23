@@ -39,6 +39,9 @@ def main() -> None:
     key = args.key
 
     config = PackConfig(source_path, output_path, tmp_path, binsize, filemaxsize, key)
+
+    logging.debug("PackConfig: {}".format(vars(config)))
+
     if args.pack:
         pack(config)
 

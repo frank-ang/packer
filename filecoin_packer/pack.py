@@ -45,6 +45,7 @@ class Bin:
         return "CAR{}".format(self.bin_id)
 
 
+
 def pack_large_file_to_staging(filepath, config, bin_list) -> None:
     """
     Split large file, move to staging, encrypt. Simple lexical bin-packing.
@@ -52,9 +53,15 @@ def pack_large_file_to_staging(filepath, config, bin_list) -> None:
     logging.info("splitting large file. {}".format(filepath))
     cur_bin = bin_list[-1]
     file_number = 1
+
     with open(filepath, mode='rb') as orig:
-        chunk = orig.read(config.file_max_bytes)
-        while chunk:
+
+        # TODO mindful of out of memory error for large files. Use buffers.
+        FILE_READ_BUFFER_SIZE = 4096
+        chunk_fragment = orig.read(FILE_READ_BUFFER_SIZE)
+        chunk_bytes = 0
+        chunk_write_bytes = 0
+        while chunk_fragment:
 
             path_in_car = os.path.relpath(os.path.dirname(filepath), config.source_path)
             staging_chunkname = "{}/{}.split.{}".format(path_in_car, os.path.basename(filepath), file_number)
@@ -65,10 +72,14 @@ def pack_large_file_to_staging(filepath, config, bin_list) -> None:
 
             os.makedirs(os.path.dirname(staging_chunkname), exist_ok=TRUE)
             logging.debug("# writing chunk to: {}".format(staging_chunkname))
-            with open(staging_chunkname, "wb") as staging_file:
-                staging_file.write(chunk)
+            with open(staging_chunkname, "ab") as staging_file:
+                while (chunk_fragment) and (chunk_write_bytes <= config.file_max_bytes): 
+                    chunk_write_bytes += staging_file.write(chunk_fragment)
+                    chunk_fragment = orig.read(FILE_READ_BUFFER_SIZE)
+                # End of Chunk.
+
             file_number += 1
-            chunk_bytes = len(chunk)
+            chunk_bytes += chunk_write_bytes
 
             # Encrypt chunk.
             encrypted_file_path = encrypt(staging_chunkname, None, config)
@@ -86,9 +97,7 @@ def pack_large_file_to_staging(filepath, config, bin_list) -> None:
                 cur_bin=next_bin
             else:
                 cur_bin.add(chunk_bytes)
-            logging.debug("Bin:{}, BinSize:{}, Path:{} :FileSize:{}".format(
-                cur_bin.bin_id, cur_bin.bin_size, encrypted_file_path, chunk_bytes))
-            chunk = orig.read(config.file_max_bytes)
+            chunk_write_bytes = 0
 
 
 def bin_source_directory(path, config, bin_list) -> None:
