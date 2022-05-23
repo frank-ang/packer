@@ -18,7 +18,7 @@ def encrypt(file_path, destination_path, config):
         else:
             encrypted_file_path = destination_path
 
-    command = "openssl smime -encrypt -binary -aes-256-cbc -in {} -out {} -outform DER {}".format(file_path, encrypted_file_path, config.key_path)
+    command = "openssl smime -encrypt -binary -aes-256-cbc -stream -in {} -out {} -outform DER {}".format(file_path, encrypted_file_path, config.key_path)
     logging.debug("## executing command: {}".format(command))
     # E.g. openssl smime -encrypt -binary -aes-256-cbc -in junk.dat -out junk.dat.enc -outform DER certificate.pem
     try:

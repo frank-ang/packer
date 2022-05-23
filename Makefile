@@ -87,8 +87,9 @@ init_largedata: init_testdata
 	./test/gen-large-test-data.sh -c 10 -s 1048576 -p MiB -d ${LARGE_DATA_PATH}
 	@echo "##🛠 creating 1GiB files..."
 	./test/gen-large-test-data.sh -c 2 -s 1073741824 -p GiB -d ${LARGE_DATA_PATH}
-	@echo "##🛠 creating 20GiB files..."
-	./test/gen-large-test-data.sh -c 1 -s $$(( 35 * 1073741824 )) -p 35GiB -d ${LARGE_DATA_PATH}
+#   Disable large file CI testing due to CircleCI free service having environment limits.
+#	@echo "##🛠 creating 35GiB files..."
+#	./test/gen-large-test-data.sh -c 1 -s $$(( 35 * 1073741824 )) -p 35GiB -d ${LARGE_DATA_PATH}
 
 	@echo "completed test data creation."
 	ls -lh "${LARGE_DATA_PATH}/1"
