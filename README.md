@@ -10,7 +10,7 @@ Utility to perform packaging of files for Filecoin deals. Performs: file encrypt
 
 # Objective.
 
-To provide a toolset for packaging large potentially proprietary data sets. Objective is to reduce friction for data movement, across both online deal and offline deal paths.
+To provide a tool for packaging large potentially proprietary data sets into the Filecoin network. Objective is to reduce friction for data movement, across both online deal and offline deal paths.
 
 ## Benefits:
 * Standardization of packaging toolset for large proprietary data sets scenarios.
@@ -36,7 +36,7 @@ Cryptographic methods:
 
 Post-MVP, it will be essential to run scalability tests and benchmarks.  
 
-# Usage concept:
+# Usage:
 
 ```bash
 NAME
@@ -113,6 +113,18 @@ Non-interactive:
 ```
 openssl req -x509 -nodes -days 36500 -newkey rsa:2048 -keyout private_key.pem -out certificate.pem -subj "/C=ZZ/O=protocol.ai/OU=outercore/CN=packer"
 ```
+
+# Backlog.
+
+Improvements:
+* AWS Packer AMI with CloudFormation template using IAM instance profile for EFS use-case, on-prem NFS via DX use-case, S3 use-case.
+* S3 support.
+* Compression.
+* Filename / dirname obfuscation. (current implementation is in clear)
+* Output manifest of file-car mappings.
+
+See [issues](https://github.com/frank-ang/packer/issues).
+
 
 # License
 
@@ -243,10 +255,3 @@ https://github.com/ipfs/devgrants/blob/master/MICROGRANTS.md
 ## Check for existing code that could be re-used?
 
 Check with Angelo about any prior similar work. Stefaan: "Box interface"?.
-
-## Roadmap / backlog.
-
-* AWS Packer AMI with CloudFormation template using IAM instance profile for EFS use-case, on-prem NFS via DX use-case, S3 use-case.
-* S3 support.
-* Compression.
-

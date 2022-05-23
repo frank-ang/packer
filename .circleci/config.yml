@@ -4,13 +4,33 @@ orbs:
 workflows:
   build_and_test:
     jobs:
-      - test
-jobs:
-  test:
+      - tests
+
+executors:
+  my-executor:
     docker:
       - image: cimg/python:3.10.4-node
+    ## larger resource, because decryption is memory-intensive. 
+    ## 2xlarge: 2 vCPU, 40GB RAM https://circleci.com/docs/2.0/configuration-reference/#docker
+    ## Appears to be a CircleCI paid feature.
+    resource_class: 2xlarge+
+
+jobs:
+  tests:
+    #docker:
+    #  - image: cimg/python:3.10.4-node
+    executor: my-executor
     steps:
       - checkout
+      - run:
+          name: Dump environment
+          command: |
+            printenv
+            pwd
+            df -h
+            mount
+            lsblk
+            cat /proc/meminfo
       - run:
           name: Install dependencies 
           command: |
@@ -19,14 +39,27 @@ jobs:
             sudo apt-get install -y rsync
             sudo npm install -g ipfs-car
             pip install -r requirements.txt
-      - run: echo "Testing Packer..."
+      - run:
+          name: Init Test Data
+          command: |
+            make init_testdata
       - run:
           name: Run tests
           command: |
-            make init_testdata
+            echo "## Running regular tests..."
             make test_all
+            python -m pytest test/test_packer.py -o log_cli=true -o log_cli_level=INFO --junitxml=reports/test-report.xml
+
+      # TODO large data tests have out of memory error on Circle CI container.
+      # Container with 68 GB memory encountered out of memory error:
+      #     ```[Makefile:55: test_pack_large] Error 137```
+      - run:
+          name: Run large test
+          command: |
+            echo "## Running large test..."
+            make init_largedata
             make test_large
-            python -m pytest test/test_packer.py --junitxml=reports/test-report.xml
+
       - store_test_results:
           path: reports/
       - store_artifacts:

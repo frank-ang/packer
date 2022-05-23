@@ -1,0 +1,103 @@
+AWSTemplateFormatVersion: '2010-09-09'
+
+Description: Packer test instance.
+
+Parameters: 
+
+  VPC:
+    Type: AWS::EC2::VPC::Id
+    Description: VPC ID.
+
+  SubnetId:
+    Type: String
+    Description: Subnet ID placement
+
+  AZ:
+    Type: AWS::EC2::AvailabilityZone::Name
+    Description: Availability Zone placement
+
+  SecurityGroup:
+    Description: Security group ID
+    Type: String
+
+  KeyPair:
+    Description: Key Pair Name
+    Type: AWS::EC2::KeyPair::KeyName
+
+  InstanceProfile:
+    Description: EC2 Instance Profile
+    Type: String
+
+  LatestUbuntuFocalAMI:
+    Description: Ubuntu AMI
+    Type: AWS::SSM::Parameter::Value<AWS::EC2::Image::Id>
+    Default: /aws/service/canonical/ubuntu/server/focal/stable/current/amd64/hvm/ebs-gp2/ami-id
+
+Mappings:
+  # Amazon Linux
+  AWSRegion2AMI:
+    us-east-1: 
+      hvm: ami-0c6b1d09930fac512
+    ap-southeast-1:
+      hvm: ami-0b5a47f8865280111
+
+Resources:
+
+  PackerInstance:
+    Type: AWS::EC2::Instance
+    Properties:
+      SubnetId: !Ref SubnetId
+      SecurityGroupIds:
+      - !Ref SecurityGroup
+      KeyName: !Ref KeyPair
+      # TODO season to taste
+      InstanceType: r5.2xlarge
+      AvailabilityZone: !Ref AZ
+      ImageId: !Ref LatestUbuntuFocalAMI
+      BlockDeviceMappings:
+        - DeviceName: /dev/sda1
+          Ebs:
+            VolumeType: gp3
+            # TODO season to taste
+            VolumeSize: '1000'
+      Tags:
+        - Key: Name
+          Value: packer-test
+      IamInstanceProfile: !Ref InstanceProfile
+      UserData:
+        Fn::Base64: !Sub |
+          #!/bin/bash
+          echo "## Installing Dependencies..."
+          apt update
+          apt install git openssl rsync -y
+          apt install software-properties-common -y
+          add-apt-repository ppa:deadsnakes/ppa -y
+          apt update
+          apt install python3.10 -y
+          apt install python3.10-distutils python3-apt -y
+          apt install python-is-python3 -y
+          apt install python3-pip -y
+          update-alternatives --install /usr/bin/python3 python3 /usr/bin/python3.10 40
+          pip install -r requirements.txt
+          apt install nodejs npm -y
+          npm install -g ipfs-car
+          pwd
+          cd /root
+          git clone https://github.com/frank-ang/packer.git
+          cd /root/packer
+          git fetch
+          # TODO use master branch
+          git switch test 
+          echo "## Instance Setup completed" > ~/userdata-install.log
+
+Outputs:
+  InstanceId:
+    Description: InstanceId of the packer EC2 instance
+    Value:
+      Ref: PackerInstance
+  PublicIP:
+    Description: Public IP address of the packer EC2 instance
+    Value:
+      Fn::GetAtt:
+      - PackerInstance
+      - PublicIp
