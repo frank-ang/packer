@@ -1,7 +1,5 @@
-import gnupg, logging, os
+import logging, os
 from subprocess import CalledProcessError, check_output, STDOUT
-
-gpg = gnupg.GPG()
 
 def encrypt(file_path, destination_path, config):
     """

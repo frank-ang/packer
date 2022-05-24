@@ -33,14 +33,6 @@ Parameters:
     Type: AWS::SSM::Parameter::Value<AWS::EC2::Image::Id>
     Default: /aws/service/canonical/ubuntu/server/focal/stable/current/amd64/hvm/ebs-gp2/ami-id
 
-Mappings:
-  # Amazon Linux
-  AWSRegion2AMI:
-    us-east-1: 
-      hvm: ami-0c6b1d09930fac512
-    ap-southeast-1:
-      hvm: ami-0b5a47f8865280111
-
 Resources:
 
   PackerInstance:
@@ -50,16 +42,14 @@ Resources:
       SecurityGroupIds:
       - !Ref SecurityGroup
       KeyName: !Ref KeyPair
-      # TODO season to taste
-      InstanceType: r5.2xlarge
+      InstanceType: r5.2xlarge # r5.2xlarge # TODO season to taste
       AvailabilityZone: !Ref AZ
       ImageId: !Ref LatestUbuntuFocalAMI
       BlockDeviceMappings:
         - DeviceName: /dev/sda1
           Ebs:
             VolumeType: gp3
-            # TODO season to taste
-            VolumeSize: '1000'
+            VolumeSize: '1000' # '1000'  # TODO season to taste
       Tags:
         - Key: Name
           Value: packer-test
@@ -69,26 +59,35 @@ Resources:
           #!/bin/bash
           echo "## Installing Dependencies..."
           apt update
-          apt install git openssl rsync -y
+          apt install git openssl rsync make -y
           apt install software-properties-common -y
           add-apt-repository ppa:deadsnakes/ppa -y
-          apt update
-          apt install python3.10 -y
-          apt install python3.10-distutils python3-apt -y
-          apt install python-is-python3 -y
-          apt install python3-pip -y
-          update-alternatives --install /usr/bin/python3 python3 /usr/bin/python3.10 40
-          pip install -r requirements.txt
-          apt install nodejs npm -y
+          apt install python3.10 -y   # latest ubuntu on AWS has only Python 3.8.10
+          rm /usr/bin/python3 # remove symlink to preinstalled python3.8
+          ln -sf /usr/bin/python3.10 /usr/bin/python3
+          ln -sf /usr/bin/python3 /usr/bin/python
+
+          apt install -y python3.10-distutils
+          apt install -y python3-apt
+          ## Fixes: https://stackoverflow.com/questions/13708180/python-dev-installation-error-importerror-no-module-named-apt-pkg
+          cd /usr/lib/python3/dist-packages
+          ln -s apt_pkg.cpython-38-x86_64-linux-gnu.so apt_pkg.so
+
+          curl https://bootstrap.pypa.io/get-pip.py | python3
+          /usr/local/bin/pip  install -r requirements.txt
+
+          curl -sL https://deb.nodesource.com/setup_16.x | sudo bash -
+          sudo apt -y install nodejs
           npm install -g ipfs-car
-          pwd
           cd /root
           git clone https://github.com/frank-ang/packer.git
           cd /root/packer
           git fetch
-          # TODO use master branch
-          git switch test 
-          echo "## Instance Setup completed" > ~/userdata-install.log
+          git switch test  # testing on "test" branchname
+          pip install -r requirements.txt
+          make init_testdata && make test
+
+          apt install -y sysstat iotop
 
 Outputs:
   InstanceId:

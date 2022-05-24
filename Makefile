@@ -11,7 +11,6 @@ RESTORE_PATH:=./test/restore
 # TODO Verify what should be the optimum value. Test with 34091302912
 BIN_SIZE:=32000000000
 MAX_FILE_SIZE:=32000000000
-#CERTIFICATE_ROOT:=stuff.gitignore/rsa
 CERTIFICATE_ROOT:=./test/security.rsa.gitignore
 CERTIFICATE:=${CERTIFICATE_ROOT}/certificate.pem
 PRIVATE_KEY:=${CERTIFICATE_ROOT}/private_key.pem
@@ -72,10 +71,15 @@ test_clean:
 	@rm -rf ${CAR_PATH}
 	@rm -rf ${RESTORE_PATH}
 	@rm -rf ${LARGE_DATA_PATH}
-	@rm -rf ${XL_DATA_PATH}
-
+#	@rm -rf ${XL_DATA_PATH}
 
 init_testdata: test_clean init_certificate_pair
+
+init_certificate_pair:
+	@echo "🔑 generating RSA certificate pair..."
+	mkdir -p ${CERTIFICATE_ROOT}
+	openssl req -x509 -nodes -days 1 -newkey rsa:2048 -keyout ${PRIVATE_KEY} -out ${CERTIFICATE} -subj "/C=ZZ/O=protocol.ai/OU=outercore/CN=packer"
+
 
 init_largedata: init_testdata
 # Generate random test data on-demand, 
@@ -90,21 +94,21 @@ init_largedata: init_testdata
 #   Disable large file CI testing due to CircleCI free service having environment limits.
 #	@echo "##🛠 creating 35GiB files..."
 #	./test/gen-large-test-data.sh -c 1 -s $$(( 35 * 1073741824 )) -p 35GiB -d ${LARGE_DATA_PATH}
-
 	@echo "completed test data creation."
 	ls -lh "${LARGE_DATA_PATH}/1"
 	du -sh "${LARGE_DATA_PATH}"
 
+
 init_xldata: init_testdata
-# Generate random test data on-demand, 
-# for 1TB test: 9x100GB 90x1GB 9000x1MB  1000000x1KB 
-# for 200GB test: 1000*1K + 99*1M + 2*1G + 1*50G =  52 G
+# Generate random test data on-demand, e.g.
+#  *   1TB test: 9x100GB 90x1GB 9000x1MB  1000000x1KB 
+#  * 200GB test: 1000*1K + 99*1M + 2*1G + 1*50G =  52 G
 # Execution times:
 #  * 200GB on Macbook pro: ~10m
-#  * 200GB on AWS (EC2 2xlarge, 1000GB gp3 EBS): 29m27.544s
-#  * 37GB on CircleCi (100GB disk size max limit): 
+#  * 200GB on AWS (EC2 2xlarge, 1000GB gp3 EBS): 29m27.544s; 30m28.261s
+#  *   1TB on AWS (EC2 2xlarge, 1000GB gp3 EBS): TODO
 #
-# Not cost-optimal to retrieve pre-generated test data from S3. 
+# Note: Not cost-optimal to store & retrieve pre-generated test data from S3.
 # E.g. 200GB on AWS S3, egress once per month to Internet. 
 # Finding: AWS Egress cost will be multiples of S3 standard storage cost.
 # *  https://calculator.aws/#/estimate?id=121d54cc893c4fc91220b34547dd37af9d80cbdd
@@ -123,14 +127,21 @@ init_xldata: init_testdata
 	ls -lH "${XL_DATA_PATH}/1"
 	du -sh "${XL_DATA_PATH}"
 
-upload_testdata:
+# Test parallelism idea for testdata generation. 
+# To execute: ```make -j 2 init_parallel```
+init_parallel: 1.init_parallel 2.init_parallel
+	@echo "🛠 Created test datasets for test, in: ${LARGE_DATA_PATH} 🛠"
+
+
+%.init_parallel:
+	@echo "##🛠 creating 1KiB files in: ${LARGE_DATA_PATH}/$*"
+	./test/gen-large-test-data.sh -c 100 -s 1024 -p KiB -d "${LARGE_DATA_PATH}/$*"
+	@echo "##🛠 DONE created 1KiB files in: ${LARGE_DATA_PATH}/$*"
+
+
+upload_testdata_deprecated:
 	@echo "Uploading test dataset from ${XL_DATA_PATH} to AWS S3..."
 	aws s3 sync ${XL_DATA_PATH} s3://filecoin-packer/testdata/ --delete --dryrun
-
-init_certificate_pair:
-	@echo "🔑 generating RSA certificate pair..."
-	mkdir -p ${CERTIFICATE_ROOT}
-	openssl req -x509 -nodes -days 1 -newkey rsa:2048 -keyout ${PRIVATE_KEY} -out ${CERTIFICATE} -subj "/C=ZZ/O=protocol.ai/OU=outercore/CN=packer"
 
 
 pytest:
@@ -148,5 +159,13 @@ create_load_test_instance:
       --stack-name "filecoin-packer-test" \
       --tags "project=filecoin"
 
+
 delete_load_test_instance:
 	aws cloudformation delete-stack --stack-name filecoin-packer-test
+
+
+wait_stack_deleted:
+	aws cloudformation wait stack-delete-complete --stack-name filecoin-packer-test
+
+
+recreate_load_test_instance: delete_load_test_instance wait_stack_deleted create_load_test_instance
