@@ -11,7 +11,6 @@ RESTORE_PATH:=./test/restore
 # TODO Verify what should be the optimum value. Test with 34091302912
 BIN_SIZE:=32000000000
 MAX_FILE_SIZE:=32000000000
-#CERTIFICATE_ROOT:=stuff.gitignore/rsa
 CERTIFICATE_ROOT:=./test/security.rsa.gitignore
 CERTIFICATE:=${CERTIFICATE_ROOT}/certificate.pem
 PRIVATE_KEY:=${CERTIFICATE_ROOT}/private_key.pem
@@ -150,3 +149,8 @@ create_load_test_instance:
 
 delete_load_test_instance:
 	aws cloudformation delete-stack --stack-name filecoin-packer-test
+
+wait_stack_deleted:
+	aws cloudformation wait stack-delete-complete --stack-name filecoin-packer-test
+
+recreate_load_test_instance: delete_load_test_instance wait_stack_deleted create_load_test_instance

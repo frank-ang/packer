@@ -59,16 +59,22 @@ Resources:
           #!/bin/bash
           echo "## Installing Dependencies..."
           apt update
-          apt install git openssl rsync -y
+          apt install git openssl rsync make -y
           apt install software-properties-common -y
           add-apt-repository ppa:deadsnakes/ppa -y
           apt install python3.10 -y   # latest ubuntu on AWS has only Python 3.8.10
-          rm /usr/bin/python3 # symlink to preinstalled python3.8
+          rm /usr/bin/python3 # remove symlink to preinstalled python3.8
           ln -sf /usr/bin/python3.10 /usr/bin/python3
           ln -sf /usr/bin/python3 /usr/bin/python
 
-          apt install -y python3-pip
-          pip install -r requirements.txt
+          apt install -y python3.10-distutils
+          apt install -y python3-apt
+          ## Fixes: https://stackoverflow.com/questions/13708180/python-dev-installation-error-importerror-no-module-named-apt-pkg
+          cd /usr/lib/python3/dist-packages
+          ln -s apt_pkg.cpython-38-x86_64-linux-gnu.so apt_pkg.so
+
+          curl https://bootstrap.pypa.io/get-pip.py | python3
+          /usr/local/bin/pip  install -r requirements.txt
 
           curl -sL https://deb.nodesource.com/setup_16.x | sudo bash -
           sudo apt -y install nodejs
