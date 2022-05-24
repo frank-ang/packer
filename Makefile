@@ -39,7 +39,9 @@ test_pack_medium: BIN_SIZE=10000
 test_pack_medium: MAX_FILE_SIZE=100
 
 test_pack_large test_pack_xl: BIN_SIZE=34091302912
-test_pack_large test_pack_xl: MAX_FILE_SIZE=34091302912
+# Decrypt malloc problem with huge file on openssl... try smaller file... Half=16GB.
+# test_pack_large test_pack_xl: MAX_FILE_SIZE=34091302912
+test_pack_large test_pack_xl: MAX_FILE_SIZE=17179869184
 test_pack_large: SOURCE_PATH=${LARGE_DATA_PATH}
 test_pack_xl: SOURCE_PATH=${XL_DATA_PATH}
 
