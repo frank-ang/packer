@@ -56,8 +56,7 @@ def pack_large_file_to_staging(filepath, config, bin_list) -> None:
 
     with open(filepath, mode='rb') as orig:
 
-        # TODO mindful of out of memory error for large files. Use buffers.
-        FILE_READ_BUFFER_SIZE = 4096
+        FILE_READ_BUFFER_SIZE = 16 * 1024
         chunk_fragment = orig.read(FILE_READ_BUFFER_SIZE)
         chunk_bytes = 0
         chunk_write_bytes = 0
@@ -261,14 +260,11 @@ def join_large_files(config) -> None:
     # Join the parts
     for large_filename in large_file_map:
         logging.debug("# joining {} from parts: {}".format(large_filename, large_file_map[large_filename]))
-        # Bufferred Join.
-        BLOCKSIZE = 4096
-        BLOCKS = 1024
-        chunk = BLOCKS * BLOCKSIZE
+        FILE_READ_BUFFER_SIZE = 16 * 1024
         with open(large_filename, "wb") as outfile:
             for part_file_path in large_file_map[large_filename]:
                 with open(part_file_path, "rb") as infile:
-                    outfile.write(infile.read(chunk))
+                    outfile.write(infile.read(FILE_READ_BUFFER_SIZE))
                 os.remove(part_file_path)
 
 
