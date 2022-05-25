@@ -102,7 +102,7 @@ init_largedata: init_testdata
 	du -sh "${LARGE_DATA_PATH}"
 
 
-init_xldata_DEPRECATED:
+init_xldata_SINGLE_THREAD_DEPRECATED:
 	@echo "🛠 creating test dataset for test, in: ${XL_DATA_PATH} 🛠"
 	@echo "##🛠 creating 1KiB files..."
 	./test/gen-large-test-data.sh -c 1000 -s 1024 -p KiB -d ${XL_DATA_PATH}
@@ -158,42 +158,8 @@ init_xldata_1GiB:
 
 # 1 100GiB file
 init_xldata_jumbo: 
-#1.init_xldata_subjumbo 2.init_xldata_subjumbo 3.init_xldata_subjumbo 4.init_xldata_subjumbo
 	@echo "##🛠 creating 100GiB files..."
-#	./test/gen-large-test-data.sh -c 1 -s 107374182400 -p dummy-100GiB -d "${XL_DATA_PATH}/100GiB"
-# Concatenate a 1GB file repeatedly.
-
-#./test/gen-large-test-data.sh -c 1 -s $$(( 1024 )) -p temp-1GiB -d "${XL_DATA_PATH}/100GiB"
-# Benchmark Time of simple dd approach: 
-#    Mac: 0.03s user 0.32s system 96% cpu 0.358 total
-#    EC2: TODO
-#	./test/gen-large-test-data.sh -c 1 -s $$(( 1024 * 1024 * 100 )) -p temp-1GiB -d "${XL_DATA_PATH}/100GiB"
-
-
-# Benchmark Time of concat loop approach: make init_xldata_jumbo  
-#   Mac: 0.03s user 0.09s system 80% cpu 0.155 total
-#   EC2: TODO
-	./test/gen-large-test-data.sh -c 1 -s $$(( 1024 * 1024 * 1024 )) -p temp-1GiB -d "${XL_DATA_PATH}/100GiB"
-	for i in {1..100};do cat ${XL_DATA_PATH}/100GiB/1/temp-1GiB-1 >> ${XL_DATA_PATH}/100GiB/dummy-100GiB; done
-
-
-# Parallel create 25GiB file
-#%.init_xldata_subjumbo:
-#	@echo "##🛠 creating piece of jumbo file..."
-#	./test/gen-large-test-data.sh -c 1 -s "$$(( 1024 * 1024 * 1024 * 25 ))" -p dummy-100GiB -d "${XL_DATA_PATH}/100GiB"
-
-foo:
-	@echo "result is: $$(( 1024 * 1024 * 1024 * 25 ))"
-
-# Test parallelism idea for testdata generation. 
-# To execute: ```make -j 2 init_parallel```
-init_parallel: 1.init_parallel 2.init_parallel
-	@echo "🛠 Created test datasets for test, in: ${LARGE_DATA_PATH} 🛠"
-
-%.init_parallel:
-	@echo "##🛠 creating 1KiB files in: ${LARGE_DATA_PATH}/$*"
-#	./test/gen-large-test-data.sh -c 100 -s 1024 -p KiB -d "${LARGE_DATA_PATH}/$*"
-	@echo "##🛠 DONE created 1KiB files in: ${LARGE_DATA_PATH}/$*"
+	./test/gen-large-test-data.sh -c 1 -s $$(( 1024 * 1024 * 1024 * 100 )) -p dummy-100GiB -d "${XL_DATA_PATH}/100GiB"
 
 
 upload_testdata_deprecated:
