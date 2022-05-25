@@ -21,8 +21,6 @@ AWS_CFN_TEMPLATE_FILE:=cloudformation.yml
 help:
 	echo "Packer makefile"
 
-clean: test_clean
-
 test: clean test_all
 
 test_all: test_small test_medium
@@ -39,7 +37,9 @@ test_pack_medium: BIN_SIZE=10000
 test_pack_medium: MAX_FILE_SIZE=100
 
 test_pack_large test_pack_xl: BIN_SIZE=34091302912
-test_pack_large test_pack_xl: MAX_FILE_SIZE=34091302912
+# Decrypt malloc problem with huge file on openssl... try smaller file... Half=16GB.
+# test_pack_large test_pack_xl: MAX_FILE_SIZE=34091302912
+test_pack_large test_pack_xl: MAX_FILE_SIZE=17179869184
 test_pack_large: SOURCE_PATH=${LARGE_DATA_PATH}
 test_pack_xl: SOURCE_PATH=${XL_DATA_PATH}
 
@@ -64,16 +64,19 @@ test_unpack_small test_unpack_medium test_unpack_large test_unpack_xl:
 	@echo "📦📦📦📦 Verifying test output..."
 	@(diff --brief --recursive ${SOURCE_PATH} ${RESTORE_PATH} && echo "Test: $@, Result: [PASSED]") || (echo "Test: $@, Result: [FAILED]" && exit 1)
 
+clean: clean_test
 
-test_clean:
+clean_test:
 	@echo "🧹 cleaning... 🧹"
 	@rm -rf ${STAGING_PATH}
 	@rm -rf ${CAR_PATH}
 	@rm -rf ${RESTORE_PATH}
 	@rm -rf ${LARGE_DATA_PATH}
-#	@rm -rf ${XL_DATA_PATH}
 
-init_testdata: test_clean init_certificate_pair
+clean_xldata:
+	@rm -rf ${XL_DATA_PATH}
+
+init_testdata: clean_test init_certificate_pair
 
 init_certificate_pair:
 	@echo "🔑 generating RSA certificate pair..."
@@ -83,7 +86,7 @@ init_certificate_pair:
 
 init_largedata: init_testdata
 # Generate random test data on-demand, 
-# 35++GB test: 1x35GB 2x1GB 10x1MB  1000x1KB 
+# 35++GB test: 1x35GB 2x1GB 10x1MB  1000x1KB
 	@echo "🛠 creating test dataset for test, in: ${LARGE_DATA_PATH} 🛠"
 	@echo "##🛠 creating 1KiB files..."
 	./test/gen-large-test-data.sh -c 1000 -s 1024 -p KiB -d "${LARGE_DATA_PATH}"
@@ -99,20 +102,7 @@ init_largedata: init_testdata
 	du -sh "${LARGE_DATA_PATH}"
 
 
-init_xldata: init_testdata
-# Generate random test data on-demand, e.g.
-#  *   1TB test: 9x100GB 90x1GB 9000x1MB  1000000x1KB 
-#  * 200GB test: 1000*1K + 99*1M + 2*1G + 1*50G =  52 G
-# Execution times:
-#  * 200GB on Macbook pro: ~10m
-#  * 200GB on AWS (EC2 2xlarge, 1000GB gp3 EBS): 29m27.544s; 30m28.261s
-#  *   1TB on AWS (EC2 2xlarge, 1000GB gp3 EBS): TODO
-#
-# Note: Not cost-optimal to store & retrieve pre-generated test data from S3.
-# E.g. 200GB on AWS S3, egress once per month to Internet. 
-# Finding: AWS Egress cost will be multiples of S3 standard storage cost.
-# *  https://calculator.aws/#/estimate?id=121d54cc893c4fc91220b34547dd37af9d80cbdd
-#
+init_xldata_SINGLE_THREAD_DEPRECATED:
 	@echo "🛠 creating test dataset for test, in: ${XL_DATA_PATH} 🛠"
 	@echo "##🛠 creating 1KiB files..."
 	./test/gen-large-test-data.sh -c 1000 -s 1024 -p KiB -d ${XL_DATA_PATH}
@@ -127,16 +117,49 @@ init_xldata: init_testdata
 	ls -lH "${XL_DATA_PATH}/1"
 	du -sh "${XL_DATA_PATH}"
 
-# Test parallelism idea for testdata generation. 
-# To execute: ```make -j 2 init_parallel```
-init_parallel: 1.init_parallel 2.init_parallel
-	@echo "🛠 Created test datasets for test, in: ${LARGE_DATA_PATH} 🛠"
 
+# Init Jumbo sized test data in parallel.
+# Usage:
+# ```
+# make init_testdata  # prereq should be run in serial.
+# make -j 5 init_xldata  # parallel execution.
+# ```
+# Generate random test data on-demand, e.g.
+#  *   1TB test: 9x100GB 90x1GB 9000x1MB  1000000x1KB 
+#  * 200GB test: 1000*1K + 99*1M + 2*1G + 1*50G =  52 G
+# Execution times:
+#  * Serial   200GB on Macbook pro: ~10m
+#  * Serial   200GB on AWS (EC2 2xlarge, 1000GB gp3 EBS): 29m27.544s; 30m28.261s
+#  * Parallel 200GB on AWS (EC2 2xlarge, 1000GB gp3 EBS): 27m20.517s (looks like bottleneck is in jumbo generation?)
+#  *   1TB on AWS (EC2 2xlarge, 3000GB gp3 EBS): TODO
 
-%.init_parallel:
-	@echo "##🛠 creating 1KiB files in: ${LARGE_DATA_PATH}/$*"
-	./test/gen-large-test-data.sh -c 100 -s 1024 -p KiB -d "${LARGE_DATA_PATH}/$*"
-	@echo "##🛠 DONE created 1KiB files in: ${LARGE_DATA_PATH}/$*"
+# Side Note: Not cost-optimal to store & retrieve pre-generated test data from S3.
+# E.g. 200GB on AWS S3, egress once per month to Internet. 
+# Finding: AWS Egress cost will be multiples of S3 standard storage cost.
+# *  https://calculator.aws/#/estimate?id=121d54cc893c4fc91220b34547dd37af9d80cbdd
+#
+init_xldata: init_testdata init_xldata_1KiB init_xldata_1MiB init_xldata_1GiB init_xldata_jumbo
+	@echo "🛠 completed jumbo test data creation in: ${XL_DATA_PATH} 🛠"
+
+# 1000 1KiB files
+init_xldata_1KiB:
+	@echo "##🛠 creating 1KiB files..."
+	./test/gen-large-test-data.sh -c 1000 -s 1024 -p dummy-KiB -d "${XL_DATA_PATH}/1KiB"
+
+# 1000 1MiB files
+init_xldata_1MiB:
+	@echo "##🛠 creating 1MiB files..." 
+	./test/gen-large-test-data.sh -c 999 -s 1048576 -p dummy-MiB -d "${XL_DATA_PATH}/1MiB"
+
+# 99 1GiB files
+init_xldata_1GiB:
+	@echo "##🛠 creating 1GiB files..."
+	./test/gen-large-test-data.sh -c 99 -s 1073741824 -p dummy-GiB -d "${XL_DATA_PATH}/1GiB"
+
+# 1 100GiB file
+init_xldata_jumbo: 
+	@echo "##🛠 creating 100GiB files..."
+	./test/gen-large-test-data.sh -c 1 -s $$(( 1024 * 1024 * 1024 * 100 )) -p dummy-100GiB -d "${XL_DATA_PATH}/100GiB"
 
 
 upload_testdata_deprecated:

@@ -17,9 +17,9 @@ To provide a tool for packaging large potentially proprietary data sets into the
 * Removes lower-level undifferentiated heavy lifting, that the Filecoin ecosystem can reuse in multiple contexts such as "Data storage broker", "Data storage concentrator" e.g. Estuary, Sneakernet provider, Data Client using DIY offline path.
 
 ## Supported source storage system types (for MVP):
-* NFS / DASD / Posix file system.
+* POSIX NFS / DASD file system.
 
-Extensibility possibilities to support additional source storage systems, particularly cloud object storage:
+Future/Backlog options to support additional sources, particularly cloud object storage:
 * Amazon S3, and S3-compatible cloud object storage.
 * Azure Blob Storage
 * Google Cloud Storage
@@ -29,8 +29,11 @@ Extensibility possibilities to support additional source storage systems, partic
 ## Encryption / Decryption
 
 Cryptographic methods:
-* RSA AES CBC
-* GnuPGP (TODO)
+* RSA AES CBC (keypair)
+
+Cryptographic methods TODO:
+* RSA AES CBC (symmetric)
+* GnuPGP
 
 ## Testing & Benchmarking
 
@@ -38,7 +41,7 @@ Post-MVP, it will be essential to run scalability tests and benchmarks.
 
 # Usage:
 
-```bash
+```
 NAME
     packer - Filecoin filesystem packager/unpackager
 
@@ -114,9 +117,9 @@ Non-interactive:
 openssl req -x509 -nodes -days 36500 -newkey rsa:2048 -keyout private_key.pem -out certificate.pem -subj "/C=ZZ/O=protocol.ai/OU=outercore/CN=packer"
 ```
 
-# Backlog.
+# Backlog / Caveats
 
-Improvements:
+## Backlog Improvements:
 * AWS Packer AMI with CloudFormation template using IAM instance profile for EFS use-case, on-prem NFS via DX use-case, S3 use-case.
 * S3 support.
 * Compression.
@@ -124,6 +127,11 @@ Improvements:
 * Output manifest of file-car mappings.
 
 See [issues](https://github.com/frank-ang/packer/issues).
+
+## CAVEATS & NOT SUPPORTED:
+
+* Path names are transparently stored in CAR files. Individual files are encrypted, but filesystem path names are stored in clear. User is responsible for ensuring source filesystem pathnames are hidden (e.g. preprocess all data into TAR files), obfuscated, or otherwise does not contain privacy information.
+* POSIX metadata (e.g. mtime) are discarded since CAR files do not preserve file metadata. Workaround is for the user to preprocess all data into TAR files (same workaround as for path name privacy)
 
 
 # License
