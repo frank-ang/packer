@@ -3,3 +3,4 @@ test/restore
 test/staging
 test/large-source
 test/xl-source
+**/*.png*
