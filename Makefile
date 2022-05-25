@@ -37,9 +37,10 @@ test_pack_medium: BIN_SIZE=10000
 test_pack_medium: MAX_FILE_SIZE=100
 
 test_pack_large test_pack_xl: BIN_SIZE=34091302912
-# Decrypt malloc problem with huge file on openssl... try smaller file... Half=16GB.
-# test_pack_large test_pack_xl: MAX_FILE_SIZE=34091302912
-test_pack_large test_pack_xl: MAX_FILE_SIZE=17179869184
+# TODO: Decrypt malloc problem with huge file on openssl... lets try limiting max file.
+# test_pack_large test_pack_xl: MAX_FILE_SIZE=34091302912 # Full CAR capacity, approx 32GB <- Out of memory.
+# test_pack_large test_pack_xl: MAX_FILE_SIZE=17179869184 # Half of CAR limit: 16GB <- ?
+test_pack_large test_pack_xl: MAX_FILE_SIZE=8589934592 # 8GB
 test_pack_large: SOURCE_PATH=${LARGE_DATA_PATH}
 test_pack_xl: SOURCE_PATH=${XL_DATA_PATH}
 
@@ -149,12 +150,12 @@ init_xldata_1KiB:
 # 1000 1MiB files
 init_xldata_1MiB:
 	@echo "##🛠 creating 1MiB files..." 
-	./test/gen-large-test-data.sh -c 999 -s 1048576 -p dummy-MiB -d "${XL_DATA_PATH}/1MiB"
+	./test/gen-large-test-data.sh -c 999 -s $$(( 1024 * 1024)) -p dummy-MiB -d "${XL_DATA_PATH}/1MiB"
 
 # 99 1GiB files
 init_xldata_1GiB:
 	@echo "##🛠 creating 1GiB files..."
-	./test/gen-large-test-data.sh -c 99 -s 1073741824 -p dummy-GiB -d "${XL_DATA_PATH}/1GiB"
+	./test/gen-large-test-data.sh -c 99 -s $$(( 1024 * 1024 * 1024)) -p dummy-GiB -d "${XL_DATA_PATH}/1GiB"
 
 # 1 100GiB file
 init_xldata_jumbo: 
