@@ -40,7 +40,12 @@ test_pack_large test_pack_xl: BIN_SIZE=34091302912
 # TODO: Decrypt malloc problem with huge file on openssl... lets try limiting max file.
 # test_pack_large test_pack_xl: MAX_FILE_SIZE=34091302912 # Full CAR capacity, approx 32GB <- Out of memory.
 # test_pack_large test_pack_xl: MAX_FILE_SIZE=17179869184 # Half of CAR limit: 16GB <- ?
-test_pack_large test_pack_xl: MAX_FILE_SIZE=8589934592 # 8GB
+# To test:
+# ```
+# ( time make -j 6 init_xldata && time make test_xl ) | tee test_xl.log
+# ```
+# MAX_FILE_SIZE=8GB size throws malloc memory error on decrypt. Try 2GB.
+test_pack_large test_pack_xl: MAX_FILE_SIZE=$$(( 1024 * 1024 * 1024 * 2 ))
 test_pack_large: SOURCE_PATH=${LARGE_DATA_PATH}
 test_pack_xl: SOURCE_PATH=${XL_DATA_PATH}
 
@@ -86,8 +91,6 @@ init_certificate_pair:
 
 
 init_largedata: init_testdata
-# Generate random test data on-demand, 
-# 35++GB test: 1x35GB 2x1GB 10x1MB  1000x1KB
 	@echo "🛠 creating test dataset for test, in: ${LARGE_DATA_PATH} 🛠"
 	@echo "##🛠 creating 1KiB files..."
 	./test/gen-large-test-data.sh -c 1000 -s 1024 -p KiB -d "${LARGE_DATA_PATH}"
@@ -95,9 +98,6 @@ init_largedata: init_testdata
 	./test/gen-large-test-data.sh -c 10 -s 1048576 -p MiB -d ${LARGE_DATA_PATH}
 	@echo "##🛠 creating 1GiB files..."
 	./test/gen-large-test-data.sh -c 2 -s 1073741824 -p GiB -d ${LARGE_DATA_PATH}
-#   Disable large file CI testing due to CircleCI free service having environment limits.
-#	@echo "##🛠 creating 35GiB files..."
-#	./test/gen-large-test-data.sh -c 1 -s $$(( 35 * 1073741824 )) -p 35GiB -d ${LARGE_DATA_PATH}
 	@echo "completed test data creation."
 	ls -lh "${LARGE_DATA_PATH}/1"
 	du -sh "${LARGE_DATA_PATH}"
@@ -130,8 +130,8 @@ init_xldata_SINGLE_THREAD_DEPRECATED:
 #  * 200GB test: 1000*1K + 99*1M + 2*1G + 1*50G =  52 G
 # Execution times:
 #  * Serial   200GB on Macbook pro: ~10m
-#  * Serial   200GB on AWS (EC2 2xlarge, 1000GB gp3 EBS): 29m27.544s; 30m28.261s
-#  * Parallel 200GB on AWS (EC2 2xlarge, 1000GB gp3 EBS): 27m20.517s (looks like bottleneck is in jumbo generation?)
+#  * Serial   200GB on AWS (EC2 r5.2xlarge, 1TB gp3 EBS): 29m27.544s; 30m28.261s
+#  * Parallel 200GB on AWS (EC2 r5.2xlarge, 1TB gp3 EBS): 27m20.517s; 26m52.510s (looks like bottleneck is in jumbo generation?)
 #  *   1TB on AWS (EC2 2xlarge, 3000GB gp3 EBS): TODO
 
 # Side Note: Not cost-optimal to store & retrieve pre-generated test data from S3.
@@ -163,7 +163,7 @@ init_xldata_jumbo:
 	./test/gen-large-test-data.sh -c 1 -s $$(( 1024 * 1024 * 1024 * 100 )) -p dummy-100GiB -d "${XL_DATA_PATH}/100GiB"
 
 
-upload_testdata_deprecated:
+upload_testdata_DEPRECATED:
 	@echo "Uploading test dataset from ${XL_DATA_PATH} to AWS S3..."
 	aws s3 sync ${XL_DATA_PATH} s3://filecoin-packer/testdata/ --delete --dryrun
 
