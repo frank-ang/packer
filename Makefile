@@ -14,7 +14,7 @@ MAX_FILE_SIZE:=32000000000
 CERTIFICATE_ROOT:=./test/security.rsa.gitignore
 CERTIFICATE:=${CERTIFICATE_ROOT}/certificate.pem
 PRIVATE_KEY:=${CERTIFICATE_ROOT}/private_key.pem
-AWS_CFN_TEMPLATE_FILE:=cloudformation.yml
+AWS_CFN_TEMPLATE_FILE:=./test/cloudformation-load-test.yml
 
 -include config.mk.gitignore
 
@@ -38,11 +38,11 @@ test_pack_medium: MAX_FILE_SIZE=100
 
 test_pack_large test_pack_xl: BIN_SIZE=34091302912
 # TODO: Decrypt malloc problem with huge file on openssl... lets try limiting max file.
-# test_pack_large test_pack_xl: MAX_FILE_SIZE=34091302912 # Full CAR capacity, approx 32GB <- Out of memory.
-# test_pack_large test_pack_xl: MAX_FILE_SIZE=17179869184 # Half of CAR limit: 16GB <- ?
-# To test:
-# ```
-# ( time make -j 6 init_xldata && time make test_xl ) | tee test_xl.log
+#    results: MAX_FILE_SIZE: 32GB, 8GB Out of memory.
+# To execute the XL-sized test:
+# ``
+# time make -j 6 init_xldata 
+# time make test_xl >> test.log 2>&1
 # ```
 # MAX_FILE_SIZE=8GB size throws malloc memory error on decrypt. Try 2GB.
 test_pack_large test_pack_xl: MAX_FILE_SIZE=$$(( 1024 * 1024 * 1024 * 2 ))
@@ -103,22 +103,6 @@ init_largedata: init_testdata
 	du -sh "${LARGE_DATA_PATH}"
 
 
-init_xldata_SINGLE_THREAD_DEPRECATED:
-	@echo "🛠 creating test dataset for test, in: ${XL_DATA_PATH} 🛠"
-	@echo "##🛠 creating 1KiB files..."
-	./test/gen-large-test-data.sh -c 1000 -s 1024 -p KiB -d ${XL_DATA_PATH}
-	@echo "##🛠 creating 1MiB files..."
-	./test/gen-large-test-data.sh -c 999 -s 1048576 -p MiB -d ${XL_DATA_PATH}
-	@echo "##🛠 creating 1GiB files..."
-	./test/gen-large-test-data.sh -c 99 -s 1073741824 -p GiB -d ${XL_DATA_PATH}
-	@echo "##🛠 creating 100GiB files..."
-	./test/gen-large-test-data.sh -c 1 -s 107374182400 -p 100GiB -d ${XL_DATA_PATH}
-
-	@echo "completed test data creation."
-	ls -lH "${XL_DATA_PATH}/1"
-	du -sh "${XL_DATA_PATH}"
-
-
 # Init Jumbo sized test data in parallel.
 # Usage:
 # ```
@@ -161,11 +145,6 @@ init_xldata_1GiB:
 init_xldata_jumbo: 
 	@echo "##🛠 creating 100GiB files..."
 	./test/gen-large-test-data.sh -c 1 -s $$(( 1024 * 1024 * 1024 * 100 )) -p dummy-100GiB -d "${XL_DATA_PATH}/100GiB"
-
-
-upload_testdata_DEPRECATED:
-	@echo "Uploading test dataset from ${XL_DATA_PATH} to AWS S3..."
-	aws s3 sync ${XL_DATA_PATH} s3://filecoin-packer/testdata/ --delete --dryrun
 
 
 pytest:
