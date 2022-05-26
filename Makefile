@@ -13,13 +13,13 @@ RESTORE_PATH:=./test/restore
 # While the openssl limit tested appears to between 1.8G and 1.9GB for source,
 # since the openssl email list points out the 1.48 limit, we should use this as authoritative.
 #
-# Considering the encrypted file is slightly larger than source, 
+# Considering the encrypted file is slightly larger than source,
 #    the 1.8GB encrypted file (1934622378 B) was 1887914 B (1.8 MB) larger than the source file (1932734464 B),
 # so, we should apply a padding of at least that size. Increase 1.8 MB to 4 MB just to be cautious.
-# So MAX_FILE_SIZE = (1024 * 1024 * 1024 * 1.48) - ( 1024 * 1024 * 4 ) = 1584943596
-#
+# FAILED: MAX_FILE_SIZE = (1024 * 1024 * 1024 * 1.48) - ( 1024 * 1024 * 4 ) = 1584943596 (still fails!)
+# TRY:    MAX_FILE_SIZE = (1024 * 1024 * 1024 * 1.40) - ( 0 ) = 1503238554
 BIN_SIZE:=32000000000
-MAX_FILE_SIZE=1584943596
+MAX_FILE_SIZE=1503238554
 CERTIFICATE_ROOT:=./test/security.rsa.gitignore
 CERTIFICATE:=${CERTIFICATE_ROOT}/certificate.pem
 PRIVATE_KEY:=${CERTIFICATE_ROOT}/private_key.pem
@@ -54,8 +54,8 @@ test_pack_large test_pack_xl: BIN_SIZE=1584943596
 # time make -j 6 init_xldata 
 # time make test_xl >> test.log 2>&1
 # ```
-# MAX_FILE_SIZE >= 2GB size throws malloc memory error on decrypt. TODO: test whats the sweet spot!
-test_pack_large test_pack_xl: MAX_FILE_SIZE=$$(( 1024 * 1024 * 1024 * 2 ))
+# MAX_FILE_SIZE >= 2GB size throws malloc memory error on decrypt. Limit is 1.48GB.
+test_pack_large test_pack_xl:
 test_pack_large: SOURCE_PATH=${LARGE_DATA_PATH}
 test_pack_xl: SOURCE_PATH=${XL_DATA_PATH}
 
