@@ -9,8 +9,17 @@ RESTORE_PATH:=./test/restore
 #  For 32GB Sector size, the usable size should be 34,091,302,912 bytes
 #  https://lotus.filecoin.io/tutorials/lotus/large-files/
 # TODO Verify what should be the optimum value. Test with 34091302912
+# UPDATE:
+# While the openssl limit tested appears to between 1.8G and 1.9GB for source,
+# since the openssl email list points out the 1.48 limit, we should use this as authoritative.
+#
+# Considering the encrypted file is slightly larger than source, 
+#    the 1.8GB encrypted file (1934622378 B) was 1887914 B (1.8 MB) larger than the source file (1932734464 B),
+# so, we should apply a padding of at least that size. Increase 1.8 MB to 4 MB just to be cautious.
+# So MAX_FILE_SIZE = (1024 * 1024 * 1024 * 1.48) - ( 1024 * 1024 * 4 ) = 1584943596
+#
 BIN_SIZE:=32000000000
-MAX_FILE_SIZE:=32000000000
+MAX_FILE_SIZE=1584943596
 CERTIFICATE_ROOT:=./test/security.rsa.gitignore
 CERTIFICATE:=${CERTIFICATE_ROOT}/certificate.pem
 PRIVATE_KEY:=${CERTIFICATE_ROOT}/private_key.pem
@@ -20,6 +29,7 @@ AWS_CFN_TEMPLATE_FILE:=./test/cloudformation-load-test.yml
 
 help:
 	echo "Packer makefile"
+	echo "MAX_FILE_SIZE $(MAX_FILE_SIZE)"
 
 test: clean test_all
 
@@ -36,7 +46,7 @@ test_pack_small: MAX_FILE_SIZE=40
 test_pack_medium: BIN_SIZE=10000
 test_pack_medium: MAX_FILE_SIZE=100
 
-test_pack_large test_pack_xl: BIN_SIZE=34091302912
+test_pack_large test_pack_xl: BIN_SIZE=1584943596
 # TODO: Decrypt malloc problem with huge file on openssl... lets try limiting max file.
 #    results: MAX_FILE_SIZE: 32GB, 8GB Out of memory.
 # To execute the XL-sized test:
@@ -44,7 +54,7 @@ test_pack_large test_pack_xl: BIN_SIZE=34091302912
 # time make -j 6 init_xldata 
 # time make test_xl >> test.log 2>&1
 # ```
-# MAX_FILE_SIZE=8GB size throws malloc memory error on decrypt. Try 2GB.
+# MAX_FILE_SIZE >= 2GB size throws malloc memory error on decrypt. TODO: test whats the sweet spot!
 test_pack_large test_pack_xl: MAX_FILE_SIZE=$$(( 1024 * 1024 * 1024 * 2 ))
 test_pack_large: SOURCE_PATH=${LARGE_DATA_PATH}
 test_pack_xl: SOURCE_PATH=${XL_DATA_PATH}
