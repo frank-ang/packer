@@ -61,7 +61,6 @@ diff test/staging/candidate.source test/staging/candidate.decrypted
 
 ```
 
-
 # Assessment:
 While the openssl limit tested appears to between 1.8G and 1.9GB for source,
 since the openssl email list points out the 1.48 limit, we should use this as authoritative.

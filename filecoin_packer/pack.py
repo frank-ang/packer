@@ -5,8 +5,8 @@ from pickle import TRUE
 from subprocess import CalledProcessError, check_output, STDOUT
 
 class PackConfig:
-    bin_max_bytes = 100
-    file_max_bytes = 50
+    bin_max_bytes = None
+    file_max_bytes = None
     source_path = "."
     staging_base_path = "."
     STAGING_ENCRYPTION_SUBDIR = "TEMP_ENCRYPT"
