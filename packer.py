@@ -3,8 +3,8 @@ from filecoin_packer.pack import Bin, PackConfig
 from filecoin_packer.pack import bin_source_directory, pack_staging_to_car
 from filecoin_packer.pack import unpack_car_to_staging, join_large_files, decrypt_staging_files, combine_files_to_output
 
-BIN_SIZE_DEFAULT=32000000000
-FILE_MAX_SIZE_DEFAULT=1024*1024*1024
+BIN_SIZE_DEFAULT=32000000000 # just under 32GB
+FILE_MAX_SIZE_DEFAULT=1024*1024*1024 # 1GB
 
 logging.basicConfig(
         format="%(asctime)s %(levelname)-8s %(message)s",

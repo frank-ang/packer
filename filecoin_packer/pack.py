@@ -1,6 +1,7 @@
 import glob, logging, os, re, shutil
 from collections import defaultdict
 from filecoin_packer.crypt import encrypt, decrypt
+from math import ceil
 from pickle import TRUE
 from subprocess import CalledProcessError, check_output, STDOUT
 
@@ -50,9 +51,11 @@ def pack_large_file_to_staging(filepath, config, bin_list) -> None:
     """
     Split large file, move to staging, encrypt. Simple lexical bin-packing.
     """
-    logging.info("splitting large file. {}".format(filepath))
     cur_bin = bin_list[-1]
     file_number = 1
+    num_chunks = ceil(os.path.getsize(filepath) / config.file_max_bytes)
+    chunk_length_digits = len(str(ceil(num_chunks))) 
+    logging.info("splitting large file: {} , into number of chunks: {}".format(filepath, num_chunks))
 
     with open(filepath, mode='rb') as orig:
 
@@ -61,14 +64,14 @@ def pack_large_file_to_staging(filepath, config, bin_list) -> None:
         chunk_bytes = 0
         chunk_write_bytes = 0
         while chunk_fragment:
-
             path_in_car = os.path.relpath(os.path.dirname(filepath), config.source_path)
-            staging_chunkname = "{}/{}.split.{}".format(path_in_car, os.path.basename(filepath), file_number)
-            staging_chunkname = os.path.join(config.staging_base_path,
-                                cur_bin.bin_name(),
-                                staging_chunkname)
-            staging_chunkname = os.path.normpath(staging_chunkname)
-
+            staging_chunkname = os.path.normpath(os.path.join(
+                                    config.staging_base_path,
+                                    cur_bin.bin_name(),
+                                    "{}/{}.split.{}".format(
+                                        path_in_car,
+                                        os.path.basename(filepath),
+                                        str(file_number).zfill(chunk_length_digits))))
             os.makedirs(os.path.dirname(staging_chunkname), exist_ok=TRUE)
             logging.debug("# writing chunk to: {}".format(staging_chunkname))
             with open(staging_chunkname, "ab") as staging_file:
@@ -261,10 +264,16 @@ def join_large_files(config) -> None:
     for large_filename in large_file_map:
         logging.debug("# joining {} from parts: {}".format(large_filename, large_file_map[large_filename]))
         FILE_READ_BUFFER_SIZE = 16 * 1024
-        with open(large_filename, "wb") as outfile:
+        with open(large_filename, "wb") as joined_file:
             for part_file_path in large_file_map[large_filename]:
-                with open(part_file_path, "rb") as infile:
-                    outfile.write(infile.read(FILE_READ_BUFFER_SIZE))
+                with open(part_file_path, "rb") as part_file:
+                    logging.debug("## writing file part: {}".format(part_file_path))
+                    # loop write
+                    chunk_fragment = part_file.read(FILE_READ_BUFFER_SIZE)
+                    while (chunk_fragment):
+                        joined_file.write(chunk_fragment)
+                        chunk_fragment = part_file.read(FILE_READ_BUFFER_SIZE)
+                # End of Chunk.
                 os.remove(part_file_path)
 
 

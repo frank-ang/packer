@@ -104,15 +104,14 @@ init_certificate_pair:
 init_largedata: init_testdata
 	@echo "🛠 creating test dataset for test, in: ${LARGE_DATA_PATH} 🛠"
 	@echo "##🛠 creating 1KiB files..."
-	./test/gen-large-test-data.sh -c 1000 -s 1024 -p KiB -d "${LARGE_DATA_PATH}"
+	./test/gen-large-test-data.sh -c 100 -s 1024 -p dummy-KiB -d "${LARGE_DATA_PATH}"
 	@echo "##🛠 creating 1MiB files..."
-	./test/gen-large-test-data.sh -c 10 -s 1048576 -p MiB -d ${LARGE_DATA_PATH}
+	./test/gen-large-test-data.sh -c 10 -s $$(( 1024 * 1024 )) -p dummy-MiB -d ${LARGE_DATA_PATH}
 	@echo "##🛠 creating 1GiB files..."
-	./test/gen-large-test-data.sh -c 2 -s 1073741824 -p GiB -d ${LARGE_DATA_PATH}
-	@echo "completed test data creation."
-	ls -lh "${LARGE_DATA_PATH}/1"
-	du -sh "${LARGE_DATA_PATH}"
-
+	./test/gen-large-test-data.sh -c 2 -s $$(( 1024 * 1024 * 1024 )) -p dummy-GiB -d ${LARGE_DATA_PATH}
+	@echo "##🛠 creating 10GiB file..."
+	./test/gen-large-test-data.sh -c 1 -s $$(( 1024 * 1024 * 1024 * 10 )) -p dummy-10GiB -d ${LARGE_DATA_PATH}
+	@echo "🛠 completed large test data creation. File count: "`find "${LARGE_DATA_PATH}/ -type f" | wc -l`" , total size: "`du -sh ${LARGE_DATA_PATH}`" 🛠"
 
 # Init Jumbo sized test data in parallel.
 # Usage:
@@ -135,7 +134,7 @@ init_largedata: init_testdata
 # *  https://calculator.aws/#/estimate?id=121d54cc893c4fc91220b34547dd37af9d80cbdd
 #
 init_xldata: init_testdata init_xldata_1KiB init_xldata_1MiB init_xldata_1GiB init_xldata_jumbo
-	@echo "🛠 completed jumbo test data creation in: ${XL_DATA_PATH} 🛠"
+	@echo "🛠 completed jumbo test data creation. File count: "`find "${XL_DATA_PATH}/ -type f" | wc -l`" , total size: "`du -sh ${XL_DATA_PATH}`" 🛠"
 
 # 1000 1KiB files
 init_xldata_1KiB:

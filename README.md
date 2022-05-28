@@ -82,28 +82,36 @@ OPTIONS
 
 ## Prerequisites
 
-Ensure dependencies are installed.
+Dependencies.
 * Linux OS (tested on Ubuntu and MacOS)
-* Python 3.10+
-* Rsync
-* NodeJS ipfs-car
+* Python 3.10+, pip
+* NodeJS 16.+
+* ipfs-car
+* rsync
+* openssl
 
+
+On Ubuntu / Debian-type Linux:
 ```bash
 sudo apt-get update -y
 sudo apt-get install -y rsync
 sudo npm install -g ipfs-car
 pip install -r requirements.txt
 ```
+Refer to Cloudformation yaml for detailed install commands.
+
 
 ## Install.
 
 Clone this repo.
+
 
 # Encryption Keys
 
 Packer currently uses RSA AES encryption. Bring your own keys, or generate a key pair (explained below). 
 
 Users are responsible for observing key management best-practices, please store your keys securely.
+
 
 ## Generate private key and public certificate.
 
@@ -117,16 +125,20 @@ Non-interactive:
 openssl req -x509 -nodes -days 36500 -newkey rsa:2048 -keyout private_key.pem -out certificate.pem -subj "/C=ZZ/O=protocol.ai/OU=outercore/CN=packer"
 ```
 
+
 # Backlog / Caveats
 
 ## Backlog Improvements:
+* Output manifest of file-car mappings.
+* Toggle encryption.
 * AWS Packer AMI with CloudFormation template using IAM instance profile for EFS use-case, on-prem NFS via DX use-case, S3 use-case.
 * S3 support.
+* Additional cryptographic methods: RSA-AES symmetric; GnuPG
 * Compression.
-* Filename / dirname obfuscation. (current implementation is in clear)
-* Output manifest of file-car mappings.
+* Filename / dirname obfuscation. (current implementation preserves cleartext path names in the CAR)
 
 See [issues](https://github.com/frank-ang/packer/issues).
+
 
 ## CAVEATS & NOT SUPPORTED:
 
