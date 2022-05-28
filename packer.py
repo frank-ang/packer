@@ -3,6 +3,8 @@ from filecoin_packer.pack import Bin, PackConfig
 from filecoin_packer.pack import bin_source_directory, pack_staging_to_car
 from filecoin_packer.pack import unpack_car_to_staging, join_large_files, decrypt_staging_files, combine_files_to_output
 
+BIN_SIZE_DEFAULT=32000000000
+FILE_MAX_SIZE_DEFAULT=1024*1024*1024
 
 logging.basicConfig(
         format="%(asctime)s %(levelname)-8s %(message)s",
@@ -21,8 +23,8 @@ def init_argparse() -> argparse.ArgumentParser:
     parser.add_argument('-s', '--source', required=True, help='During packing, the path to the original source data. During unpacking, the path containing CAR files.')
     parser.add_argument('-t', '--tmp', required=True, help='Path to temporary staging directory.')
     parser.add_argument('-o', '--output', required=True, help='Path to write output of packaged or unpackaged content.')
-    parser.add_argument('-b', '--binsize', required=False, default=32000000000, type=int, help='Bin size (bytes)')
-    parser.add_argument('-m', '--filemaxsize', required=False, default=1024*1024*1024, type=int, help='File max size (bytes)')
+    parser.add_argument('-b', '--binsize', required=False, default=BIN_SIZE_DEFAULT, type=int, help='Bin size (bytes)')
+    parser.add_argument('-m', '--filemaxsize', required=False, default=FILE_MAX_SIZE_DEFAULT, type=int, help='File max size (bytes)')
     parser.add_argument('-k', '--key', required=False, help='Cryptographic Key or Certificate')
     return parser
 
