@@ -231,13 +231,12 @@ def unpack_car_to_staging(config) -> None:
     staging_dir = os.path.abspath(os.path.normpath(config.staging_base_path))
     CAR_SUBDIR_CONTENT_PATTERN = staging_dir + "/CAR[0-9]*/"
     car_content_paths = sorted(glob.glob(CAR_SUBDIR_CONTENT_PATTERN, recursive=False)) 
-    consolidated_staging_dir_path = config.staging_consolidation_path
-    os.makedirs(consolidated_staging_dir_path, exist_ok=TRUE)
+    os.makedirs(config.staging_consolidation_path, exist_ok=TRUE)
 
     for bin_dir in car_content_paths:
         bin_dir = os.path.normpath(os.path.join(staging_dir_path,bin_dir)) + "/"
-        logging.debug("# moving from:{}, to:{}".format(bin_dir, consolidated_staging_dir_path))
-        move_cmd = "rsync -a {} {}".format(bin_dir, consolidated_staging_dir_path) 
+        logging.debug("# moving from:{}, to:{}".format(bin_dir, config.staging_consolidation_path))
+        move_cmd = "rsync -a --remove-source-files {} {}".format(bin_dir, config.staging_consolidation_path)
         logging.debug("# Moving bin: {}".format(move_cmd))
         try:
             cmd_out = check_output(move_cmd, stderr=STDOUT, shell=True)
@@ -284,7 +283,7 @@ def combine_files_to_output(config) -> None:
     os.makedirs(output_dir_path, exist_ok=TRUE)
 
     logging.debug("# moving from:{}, to:{}".format(staging_dir, output_dir_path))
-    move_cmd = "rsync -a {} {}".format(staging_dir, output_dir_path) 
+    move_cmd = "rsync --remove-source-files -a {} {}".format(staging_dir, output_dir_path)
     logging.debug("# Moving bin: {}".format(move_cmd))
     try:
         cmd_out = check_output(move_cmd, stderr=STDOUT, shell=True)

@@ -40,17 +40,17 @@ jobs:
             sudo npm install -g ipfs-car
             pip install -r requirements.txt
       - run:
-          name: Init Test Data
+          name: Initialize tests, generate key pair.
           command: |
             make init_testdata
       - run:
-          name: Run tests
+          name: Test small and medium data
           command: |
             echo "## Running regular tests..."
             make test_all
             python -m pytest test/test_packer.py -o log_cli=true -o log_cli_level=INFO --junitxml=reports/test-report.xml
       - run:
-          name: Run large test
+          name: Test large data
           command: |
             echo "## Running large test..."
             make init_largedata
