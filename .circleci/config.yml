@@ -40,26 +40,21 @@ jobs:
             sudo npm install -g ipfs-car
             pip install -r requirements.txt
       - run:
-          name: Init Test Data
+          name: Initialize tests, generate key pair.
           command: |
             make init_testdata
       - run:
-          name: Run tests
+          name: Test small and medium data
           command: |
             echo "## Running regular tests..."
             make test_all
             python -m pytest test/test_packer.py -o log_cli=true -o log_cli_level=INFO --junitxml=reports/test-report.xml
-
-      # TODO large data tests have out of memory error on Circle CI container.
-      # Container with 68 GB memory encountered out of memory error:
-      #     ```[Makefile:55: test_pack_large] Error 137```
       - run:
-          name: Run large test
+          name: Test large data
           command: |
             echo "## Running large test..."
             make init_largedata
             make test_large
-
       - store_test_results:
           path: reports/
       - store_artifacts:
