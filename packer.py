@@ -34,7 +34,6 @@ def init_argparse() -> argparse.ArgumentParser:
 def main() -> None:
     parser = init_argparse()
     parsed_args = parser.parse_args()
-    job_concurrency = parsed_args.jobs
     # TODO Implement multiprocessing for job concurrency.
     ## multiple config, each having a different args.source (TODO something like: handle multi-valued args.source, per job)
     ## group child directories into bins, bin_count = source_size / job_count.
@@ -48,30 +47,30 @@ def main() -> None:
 
     job_bin_size = 0
     job_to_paths_list = [[]]
-    for child in children:
+    for child_path in children:
 
-        if child.is_file():
-            child_size = child.stat().st_size
-        elif child.is_dir():
-            child_size = sum(f.stat().st_size for f in Path(child.path).glob('**/*') if f.is_file())
+        if child_path.is_file():
+            child_size = child_path.stat().st_size
+        elif child_path.is_dir():
+            child_size = sum(f.stat().st_size for f in Path(child_path.path).glob('**/*') if f.is_file())
         else:
             raise Exception("Entry is not dir or file type.")
-        logging.debug("## path: {} , size:{}".format(child.path, child_size))
+        logging.debug("## path: {} , size:{}".format(child_path.path, child_size))
         if (job_bin_size > 0) and ((job_bin_size + child_size) > job_bin_size_target):
             # child belongs in the next bin
             logging.debug("## next bin")
             job_bin_size = 0
             job_to_paths_list.append([])
         job_bin_size += child_size 
-        job_to_paths_list[-1].append(child.path)
+        job_to_paths_list[-1].append(child_path.path)
         logging.debug("##  job bin size: {}".format(job_bin_size))
         logging.debug("##  job_to_paths_list: {}".format(job_to_paths_list))
 
-    # TODO Launch jobs processes/threads
+    # Launch processes
     process_list = []
     job_index = 0
-    for paths_list in job_to_paths_list:
-        logging.debug("## Launching job: {}, for paths_list: {}".format(job_index, paths_list))
+    for child_path in job_to_paths_list:
+        logging.debug("## Launching job: {}, for paths_list: {}".format(job_index, child_path))
         mode = None
         if parsed_args.pack:
             mode = PackConfig.MODE_PACK
@@ -81,11 +80,11 @@ def main() -> None:
             raise Exception("Pack or Unpack parameter required.") 
         zero_padding_digits = len(str(len(job_to_paths_list)))
         job_path_suffix = "JOB.{}".format(str(job_index).zfill(zero_padding_digits))
-        job_source = parsed_args.source # paths_list per-job
+        job_source = parsed_args.source  # parsed_args.source 
         job_output = os.path.join(parsed_args.output, job_path_suffix) # subdir per-job
         job_staging = os.path.join(parsed_args.tmp, job_path_suffix) # subdir per-job
         job_config = PackConfig(job_source, job_output, job_staging ,parsed_args.binsize, parsed_args.filemaxsize, parsed_args.key, mode)
-        process = multiprocessing.Process(target=execute, args=[job_config])
+        process = multiprocessing.Process(target=execute, args=(job_config, child_path))
         process_list.append(process)
         process.start()
         job_index += 1
@@ -99,27 +98,32 @@ def main() -> None:
     exit(0)
 
 
-def execute(config) -> None:
+def execute(config, paths_list) -> None:
     # TODO Fix multiprocess logging 
-    logging.debug("## Executing Process!!! PackConfig: {}".format(vars(config)))
+    logging.debug("## Executing Process!!! PackConfig:{} , Paths:{}".format(vars(config), paths_list))
     if config.mode == config.MODE_PACK:
         sleep(1) # TODO
         logging.debug("packing...")
-        pack(config)
+        pack(config, paths_list)
     elif config.mode == config.MODE_UNPACK:
         sleep(1) # TODO
         logging.debug("unpacking...")
         unpack(config)
 
 
-def pack(config) -> None:
+def pack(config, paths_list) -> None:
     # Pack up the source directory for transport into Filecoin via CAR format.
-    logging.debug("Scanning Path:" + config.source_path)
+    logging.debug("## Packing Source: {} ; Paths List: {}".format(config.source_path, paths_list))
     try:
-        bin_list = [Bin(0)]
 
         # 1. Pack the source directory into binned staging directories. Split large files. Encrypt files.
-        bin_source_directory(config.source_path, config, bin_list)
+        # TODO multiprocess the bin of paths.
+        bin_list = [Bin(0)]
+        # deprecated: following is single-threaded
+        # bin_source_directory(config.source_path, config, bin_list)
+
+        for child_path in paths_list:
+            bin_source_directory(child_path, config, bin_list)
 
         # cleanup. 
         logging.debug("cleaning up encryption temp dir: {}".format(os.path.join(config.staging_base_path, config.STAGING_ENCRYPTION_SUBDIR)))

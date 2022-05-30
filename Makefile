@@ -81,7 +81,8 @@ test_unpack_small test_unpack_medium test_unpack_large test_unpack_xl:
 	@echo "📦📦📦📦 Verifying test output..."
 	@(diff --brief --recursive ${SOURCE_PATH} ${RESTORE_PATH} && echo "Test: $@, Result: [PASSED]") || (echo "Test: $@, Result: [FAILED]" && exit 1)
 
-test_jobs: init_testdata test_pack_jobs
+test_jobs: init_testdata test_pack_jobs test_unpack_jobs
+# test_unpack_jobs
 
 # test_pack_jobs: BIN_SIZE=60
 test_pack_jobs: MAX_FILE_SIZE=1024
@@ -90,6 +91,15 @@ test_pack_jobs:
 	@echo; echo "📦📦📦📦 Test: $@ 📦📦📦📦"
 	@echo "📦📦📦📦 Testing Packing with concurrency Max file size: ${MAX_FILE_SIZE} 📦📦📦📦"
 	time python ./packer.py --pack --source ${SOURCE_PATH} --tmp ${STAGING_PATH} --output ${CAR_PATH} --binsize ${BIN_SIZE} --filemaxsize $(MAX_FILE_SIZE) --key $(CERTIFICATE) --jobs $(JOBS)
+
+test_unpack_jobs: JOBS=1
+test_unpack_jobs:
+	@rm -rf ${STAGING_PATH}/*
+	@rm -rf ${RESTORE_PATH}/*
+	@echo "📦📦📦📦 Testing Unpacking. Test: $@ 📦📦📦📦"
+	time python ./packer.py --unpack --source ${CAR_PATH} --tmp ${STAGING_PATH} --output ${RESTORE_PATH} --key $(PRIVATE_KEY) --jobs $(JOBS)
+	@echo "📦📦📦📦 Verifying test output..."
+	@(diff --brief --recursive ${SOURCE_PATH} ${RESTORE_PATH} && echo "Test: $@, Result: [PASSED]") || (echo "Test: $@, Result: [FAILED]" && exit 1)
 
 
 clean: clean_test
