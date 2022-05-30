@@ -4,7 +4,13 @@ orbs:
 workflows:
   build_and_test:
     jobs:
-      - tests
+      - tests:
+          filters:
+            branches:
+              only: 
+                - master
+                - test
+
 
 executors:
   my-executor:
