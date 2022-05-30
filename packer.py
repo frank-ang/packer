@@ -81,10 +81,11 @@ def main() -> None:
         zero_padding_digits = len(str(len(job_to_paths_list)))
         job_path_suffix = "JOB.{}".format(str(job_index).zfill(zero_padding_digits))
         job_source = parsed_args.source  # parsed_args.source 
-        job_output = os.path.join(parsed_args.output, job_path_suffix) # subdir per-job
-        job_staging = os.path.join(parsed_args.tmp, job_path_suffix) # subdir per-job
-        job_config = PackConfig(job_source, job_output, job_staging ,parsed_args.binsize, parsed_args.filemaxsize, parsed_args.key, mode)
-        process = multiprocessing.Process(target=execute, args=(job_config, child_path))
+        # job_output = os.path.join(os.path.normpath(parsed_args.output), job_path_suffix) # subdir per-job
+        # job_final_output = parsed_args.output
+        job_staging = os.path.join(os.path.normpath(parsed_args.tmp), job_path_suffix) # subdir per-job
+        job_config = PackConfig(job_source, parsed_args.output, job_staging ,parsed_args.binsize, parsed_args.filemaxsize, parsed_args.key, mode)
+        process = multiprocessing.Process(target=execute, args=(job_config, child_path, parsed_args.output))
         process_list.append(process)
         process.start()
         job_index += 1
@@ -98,17 +99,17 @@ def main() -> None:
     exit(0)
 
 
-def execute(config, paths_list) -> None:
+def execute(config, paths_list, final_output_path) -> None:
     # TODO Fix multiprocess logging 
-    logging.debug("## Executing Process!!! PackConfig:{} , Paths:{}".format(vars(config), paths_list))
+    multiprocessing_logging.install_mp_handler(logging.getLogger())
+
+    logging.debug("#### Executing Job Process PackConfig:{} , Paths:{}".format(vars(config), paths_list))
     if config.mode == config.MODE_PACK:
-        sleep(1) # TODO
-        logging.debug("packing...")
+        logging.debug("#### packing: {}".format(paths_list))
         pack(config, paths_list)
     elif config.mode == config.MODE_UNPACK:
-        sleep(1) # TODO
-        logging.debug("unpacking...")
-        unpack(config)
+        logging.debug("#### unpacking: {}".format(paths_list))
+        unpack(config, paths_list, final_output_path)
 
 
 def pack(config, paths_list) -> None:
@@ -138,20 +139,21 @@ def pack(config, paths_list) -> None:
         raise
 
 
-def unpack(config) -> None:
-    # Pack up the source directory of CAR files into the output, with extraction and reassembly.
+def unpack(config, paths_list, final_output_path) -> None:
+    # Pack up the paths_list directories of CAR files into the output, with extraction and reassembly.
     try:
-        # 1. Unpack the CAR files to binned staging directories.
-        unpack_car_to_staging(config)
+        for child_path in paths_list:
+            # 1. Unpack the CAR files to binned staging directories.
+            unpack_car_to_staging(config, child_path)
 
-        # 2. Decrypt files.
-        decrypt_staging_files(config.staging_consolidation_path, config)
+            # 2. Decrypt files.
+            decrypt_staging_files(config.staging_consolidation_path, config)
 
-        # 3. Join split file parts into original large files.
-        join_large_files(config)
+            # 3. Join split file parts into original large files.
+            join_large_files(config)
 
-        # 4. Combine the binned staging directories to the output path.
-        combine_files_to_output(config)
+            # 4. Combine the binned staging directories to the output path.
+            combine_files_to_output(config)
 
     except Exception as e:
         logging.debug(e)
@@ -159,10 +161,9 @@ def unpack(config) -> None:
 
 
 if __name__ == "__main__":
-    multiprocessing_logging.install_mp_handler()
     logging.basicConfig(
         format="%(asctime)s %(levelname)-8s %(message)s",
         datefmt="%d-%b-%y %H:%M:%S",
         level=logging.DEBUG) # TODO raise to INFO default, with verbose option.
-
+    multiprocessing_logging.install_mp_handler()
     main()

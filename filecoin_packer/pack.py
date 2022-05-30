@@ -2,8 +2,17 @@ import glob, logging, os, re, shutil
 from collections import defaultdict
 from filecoin_packer.crypt import encrypt, decrypt
 from math import ceil
+import multiprocessing_logging
 from pickle import TRUE
 from subprocess import CalledProcessError, check_output, STDOUT
+
+
+logging.basicConfig(
+    format="%(asctime)s %(levelname)-8s %(message)s",
+    datefmt="%d-%b-%y %H:%M:%S",
+    level=logging.DEBUG) # TODO raise to INFO default, with verbose option.
+multiprocessing_logging.install_mp_handler()
+
 
 class PackConfig:
     MODE_PACK = "MODE_PACK"
@@ -205,24 +214,27 @@ def pack_staging_to_car(config) -> None:
             raise Exception(e.output) from e
 
 
-def unpack_car_to_staging(config) -> None:
+def unpack_car_to_staging(config, path) -> None:
     """
     Takes a bunch of CAR files from a source directory, and unpacks into the staging directory.
     """
     CAR_SUFFIX=".car"
     logging.debug("# unpack_car_to_staging(). path:{}".format(config.source_path))
-    with os.scandir(config.source_path) as iterator:
-        children = list(iterator)
-    children.sort(key= lambda x: x.name)
-    # Filter only matching ".car" files
+    # Find  matching ".car" files
+    CAR_FILE_PATTERN = path + "/**/CAR[0-9]*.car"
+    children = sorted(glob.glob(CAR_FILE_PATTERN, recursive=True))
+    ### 
+    ####with os.scandir(car_file_paths) as iterator: # TODO glob
+    ####    children = list(iterator)
+    #### children.sort(key= lambda x: x.name)
     staging_dir_path = os.path.normpath(config.staging_base_path)
     os.makedirs(staging_dir_path, exist_ok=TRUE)
 
-    for car_file in children:
-        if not car_file.name.endswith(CAR_SUFFIX):
-            continue
+    for car_file_path in children:
+        # if not car_file.name.endswith(CAR_SUFFIX):
+        #   continue
 
-        ipfs_car_cmd = "ipfs-car --unpack {} --output {}".format(car_file.path, staging_dir_path) 
+        ipfs_car_cmd = "ipfs-car --unpack {} --output {}".format(car_file_path, staging_dir_path) 
         logging.debug("# Unpack CAR executing: {}".format(ipfs_car_cmd))
         try:
             cmd_out = check_output(ipfs_car_cmd, stderr=STDOUT, shell=True)

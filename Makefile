@@ -8,35 +8,30 @@ RESTORE_PATH:=./test/restore
 # Bin Size and Max Filesize (both should be set to identical values) in Bytes
 #  For 32GB Sector size, the usable size should be 34,091,302,912 bytes
 #  https://lotus.filecoin.io/tutorials/lotus/large-files/
-# TODO Verify what should be the optimum value. Test with 34091302912
-# UPDATE:
-# While the openssl limit tested appears to between 1.8G and 1.9GB for source,
-# since the openssl email list points out the 1.48 limit, we should use this as authoritative.
-# For safety, lets use 1.0 GB max file size split.
+#
+# Decision to use 1 GB max file size is due to an openssl decryption scaling limitation.
+#   Openssl email list points out the 1.48 limit, we should use this as authoritative.
+#   Openssl source file size limit during decryption has been tested on Ubuntu EC2 to be 1.8G to 1.9GB.
+#   To be conservative, this implementation will use 1.0 GB max file size split to keep well within the limit.
 # 
-# TODO cleanup comments.
-# Considering the encrypted file is slightly larger than source,
-#    the 1.8GB encrypted file (1934622378 B) was 1887914 B (1.8 MB) larger than the source file (1932734464 B),
-# so, we should apply a padding of at least that size. Increase 1.8 MB to 4 MB just to be cautious.
+# Observation: Encryption overhead.
+# 	Encrypted file has been tested to be slightly larger than source,
+#    a 1.8GB encrypted file (1934622378 B) was larger than the source file (1932734464 B) by 1887914 B (1.8 MB)
 # 
-# FAILED: MAX_FILE_SIZE = (1024 * 1024 * 1024 * 1.48) - ( 1024 * 1024 * 4 ) = 1584943596 (still fails!)
-# TRY:    MAX_FILE_SIZE = (1024 * 1024 * 1024 * 1.40) - ( 0 ) = 1503238554
-# TODO: Decrypt malloc problem with huge file on openssl... lets try limiting max file.
-#    results: MAX_FILE_SIZE: 32GB, 8GB Out of memory.
-# To execute the XL-sized test:
-# ``
+# XL-sized test. To execute:
+# ```
 # time make -j 6 init_xldata 
 # time make test_xl >> test.log 2>&1
 # ```
-# MAX_FILE_SIZE >= 2GB size throws malloc memory error on decrypt. Limit is 1.48GB.
+# TODO: Create the following config file, based on template file: config.mk
+-include config.mk.gitignore
+
 BIN_SIZE:=32000000000
 MAX_FILE_SIZE=1073741824
 CERTIFICATE_ROOT:=./test/security.rsa.gitignore
 CERTIFICATE:=${CERTIFICATE_ROOT}/certificate.pem
 PRIVATE_KEY:=${CERTIFICATE_ROOT}/private_key.pem
 AWS_CFN_TEMPLATE_FILE:=./test/cloudformation-load-test.yml
-
--include config.mk.gitignore
 
 help:
 	echo "Packer makefile"
@@ -82,7 +77,6 @@ test_unpack_small test_unpack_medium test_unpack_large test_unpack_xl:
 	@(diff --brief --recursive ${SOURCE_PATH} ${RESTORE_PATH} && echo "Test: $@, Result: [PASSED]") || (echo "Test: $@, Result: [FAILED]" && exit 1)
 
 test_jobs: init_testdata test_pack_jobs test_unpack_jobs
-# test_unpack_jobs
 
 # test_pack_jobs: BIN_SIZE=60
 test_pack_jobs: MAX_FILE_SIZE=1024
@@ -94,6 +88,7 @@ test_pack_jobs:
 
 test_unpack_jobs: JOBS=1
 test_unpack_jobs:
+	@echo "ENTER to proceed... " && read PROCEED
 	@rm -rf ${STAGING_PATH}/*
 	@rm -rf ${RESTORE_PATH}/*
 	@echo "📦📦📦📦 Testing Unpacking. Test: $@ 📦📦📦📦"
@@ -121,7 +116,6 @@ init_certificate_pair:
 	mkdir -p ${CERTIFICATE_ROOT}
 	openssl req -x509 -nodes -days 1 -newkey rsa:2048 -keyout ${PRIVATE_KEY} -out ${CERTIFICATE} -subj "/C=ZZ/O=protocol.ai/OU=outercore/CN=packer"
 
-
 init_largedata: init_testdata
 	@echo "🛠 creating test dataset for test, in: ${LARGE_DATA_PATH} 🛠"
 	@echo "##🛠 creating 1KiB files..."
@@ -148,7 +142,7 @@ init_largedata: init_testdata
 #  * Serial   200GB on AWS (EC2 r5.2xlarge, 1TB gp3 EBS): 29m27.544s; 30m28.261s
 #  * Parallel 200GB on AWS (EC2 r5.2xlarge, 1TB gp3 EBS): 27m20.517s; 26m52.510s (looks like bottleneck is in jumbo generation?)
 #  *   1TB on AWS (EC2 2xlarge, 3000GB gp3 EBS): TODO
-
+#
 # Side Note: Not cost-optimal to store & retrieve pre-generated test data from S3.
 # E.g. 200GB on AWS S3, egress once per month to Internet. 
 # Finding: AWS Egress cost will be multiples of S3 standard storage cost.
