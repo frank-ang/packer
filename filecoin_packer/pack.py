@@ -6,6 +6,8 @@ from pickle import TRUE
 from subprocess import CalledProcessError, check_output, STDOUT
 
 class PackConfig:
+    MODE_PACK = "MODE_PACK"
+    MODE_UNPACK = "MODE_UNPACK"
     bin_max_bytes = None
     file_max_bytes = None
     source_path = "."
@@ -20,9 +22,9 @@ class PackConfig:
 
     @classmethod
     def from_args(cls, args):
-        return cls(args.source_path, args.output_path, args.staging_base_path, args.binsize, args.args.filemaxsize, args.key)
+        return cls(args.source_path, args.output_path, args.staging_base_path, args.binsize, args.args.filemaxsize, args.key, args.mode)
 
-    def __init__(self, source_path, output_path, staging_base_path, bin_max_bytes, file_max_bytes, key_path):
+    def __init__(self, source_path, output_path, staging_base_path, bin_max_bytes, file_max_bytes, key_path, mode):
         self.source_path = source_path
         self.output_path = output_path
         self.staging_base_path = staging_base_path
@@ -31,6 +33,7 @@ class PackConfig:
         self.file_max_bytes = file_max_bytes
         self.exclude_patterns = [".DS_Store"]
         self.key_path = key_path
+        self.mode = mode
 
 
 class Bin:
@@ -45,6 +48,82 @@ class Bin:
     def bin_name(self):
         return "CAR{}".format(self.bin_id)
 
+
+def bin_source_directory(path, config, bin_list) -> None:
+    """
+    Traverse the specified path, 
+    copy files into maximum-sized bins of subdirectories under the config staging path.
+    Features:
+    * Large file splitting.
+    * Encryption.
+    Parameters:
+        path: Path of source filesystem.
+        config: parameters
+        bin_list: Processing state maintained in a list of Bin objects.
+    """
+
+    cur_bin = bin_list[-1]
+    logging.debug("# bin_source_directory(): path:{}, bin:{}".format(path, cur_bin.bin_id))
+
+    with os.scandir(path) as iterator:
+        children = list(iterator)
+    children.sort(key= lambda x: x.name)
+
+    for entry in children:
+        if entry.is_file():
+            # Skip excluded files
+            # Using join regex + loop + re.match()
+            pattern = '(?:% s)' % '|'.join(config.exclude_patterns)
+            if re.match(pattern, entry.name):
+                continue
+
+            file_size = entry.stat().st_size
+
+            # 1. Split large files, process each of the pieces. 
+            if file_size > config.file_max_bytes:
+                pack_large_file_to_staging(entry.path, config, bin_list)
+                continue
+
+            file_to_pack = entry.path
+            relpath = os.path.relpath(file_to_pack, config.source_path)
+
+            # 2. Encrypt file. TODO conditional encryption based on switch (existence of config.key_path parameter)
+            encrypted_file_path = os.path.join(config.staging_base_path, config.STAGING_ENCRYPTION_SUBDIR, relpath + config.ENCRYPTED_FILE_SUFFIX)
+            os.makedirs(os.path.dirname(encrypted_file_path), exist_ok=TRUE)
+            encrypted_file_path = encrypt(entry.path, encrypted_file_path, config)
+
+            if not encrypted_file_path is None:
+                file_size = os.path.getsize(encrypted_file_path)
+                file_to_pack = encrypted_file_path
+                relpath = os.path.relpath(file_to_pack, os.path.join(config.staging_base_path, config.STAGING_ENCRYPTION_SUBDIR))
+
+            # Determine which Bin.
+            if (cur_bin.bin_size + file_size) > config.bin_max_bytes:
+                logging.debug("++Bin Increment! {} + {} > {}".format(cur_bin.bin_size, file_size, config.bin_max_bytes))
+                next_bin = Bin(cur_bin.bin_id + 1)
+                next_bin.add(file_size)
+                bin_list.append(next_bin)
+                cur_bin=next_bin
+            else:
+                cur_bin.add(file_size)
+            logging.debug("Bin:{}, BinSize:{}, Path:{} :FileSize:{}".format(
+                cur_bin.bin_id, cur_bin.bin_size, file_to_pack, file_size))
+            file_staging_path = os.path.normpath(os.path.join(config.staging_base_path,
+                                cur_bin.bin_name(), relpath))
+            os.makedirs(os.path.dirname(file_staging_path), exist_ok=TRUE)
+            # If encrypted, move to staging. If not encrypting, copy to staging.
+            if not encrypted_file_path is None:
+                logging.debug("... move encrypted file to output: {}".format(file_staging_path))
+                shutil.move(file_to_pack, file_staging_path)
+            else:
+                logging.debug("... copy file to output: {}".format(file_staging_path))
+                shutil.copyfile(file_to_pack, file_staging_path)
+
+        elif entry.is_dir():
+            # Recurse into directory. New bins to be created accordingly.
+            bin_source_directory(entry.path, config, bin_list)
+        else:
+            raise Exception("Entry is not dir or file type.")
 
 
 def pack_large_file_to_staging(filepath, config, bin_list) -> None:
@@ -100,83 +179,6 @@ def pack_large_file_to_staging(filepath, config, bin_list) -> None:
             else:
                 cur_bin.add(chunk_bytes)
             chunk_write_bytes = 0
-
-
-def bin_source_directory(path, config, bin_list) -> None:
-    """
-    Traverse the specified path, 
-    copy files into maximum-sized bins of subdirectories under the config staging path.
-    Features:
-    * Large file splitting.
-    * Encryption.
-    Parameters:
-        path: Path of source filesystem.
-        config: parameters
-        bin_list: Processing state maintained in a list of Bin objects.
-    """
-
-    cur_bin = bin_list[-1]
-    logging.debug("# bin_source_directory(): path:{}, bin:{}".format(path, cur_bin.bin_id))
-
-    with os.scandir(path) as iterator:
-        children = list(iterator)
-    children.sort(key= lambda x: x.name)
-
-    for entry in children:
-        if entry.is_file():
-            # Skip excluded files
-            # Using join regex + loop + re.match()
-            pattern = '(?:% s)' % '|'.join(config.exclude_patterns)
-            if re.match(pattern, entry.name):
-                continue
-
-            file_size = entry.stat().st_size
-
-            # 1. Split large files, process each of the pieces. 
-            if file_size > config.file_max_bytes:
-                pack_large_file_to_staging(entry.path, config, bin_list)
-                continue
-
-            file_to_pack = entry.path
-            relpath = os.path.relpath(file_to_pack, config.source_path)
-
-            # 2. Encrypt file.
-            encrypted_file_path = os.path.join(config.staging_base_path, config.STAGING_ENCRYPTION_SUBDIR, relpath + config.ENCRYPTED_FILE_SUFFIX)
-            os.makedirs(os.path.dirname(encrypted_file_path), exist_ok=TRUE)
-            encrypted_file_path = encrypt(entry.path, encrypted_file_path, config)
-
-            if not encrypted_file_path is None:
-                file_size = os.path.getsize(encrypted_file_path)
-                file_to_pack = encrypted_file_path
-                relpath = os.path.relpath(file_to_pack, os.path.join(config.staging_base_path, config.STAGING_ENCRYPTION_SUBDIR))
-
-            # Determine which Bin.
-            if (cur_bin.bin_size + file_size) > config.bin_max_bytes:
-                logging.debug("++Bin Increment! {} + {} > {}".format(cur_bin.bin_size, file_size, config.bin_max_bytes))
-                next_bin = Bin(cur_bin.bin_id + 1)
-                next_bin.add(file_size)
-                bin_list.append(next_bin)
-                cur_bin=next_bin
-            else:
-                cur_bin.add(file_size)
-            logging.debug("Bin:{}, BinSize:{}, Path:{} :FileSize:{}".format(
-                cur_bin.bin_id, cur_bin.bin_size, file_to_pack, file_size))
-            file_staging_path = os.path.normpath(os.path.join(config.staging_base_path,
-                                cur_bin.bin_name(), relpath))
-            os.makedirs(os.path.dirname(file_staging_path), exist_ok=TRUE)
-            # If encrypted, move to staging. If not encrypting, copy to staging.
-            if not encrypted_file_path is None:
-                logging.debug("... move encrypted file to output: {}".format(file_staging_path))
-                shutil.move(file_to_pack, file_staging_path)
-            else:
-                logging.debug("... copy file to output: {}".format(file_staging_path))
-                shutil.copyfile(file_to_pack, file_staging_path)
-
-        elif entry.is_dir():
-            # Recurse into directory. New bins to be created accordingly.
-            bin_source_directory(entry.path, config, bin_list)
-        else:
-            raise Exception("Entry is not dir or file type.")
 
 
 def pack_staging_to_car(config) -> None:
