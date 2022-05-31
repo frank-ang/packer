@@ -2,10 +2,9 @@ import argparse, logging, os, shutil
 from filecoin_packer.pack import Bin, PackConfig 
 from filecoin_packer.pack import bin_source_directory, pack_staging_to_car
 from filecoin_packer.pack import unpack_car_to_staging, join_large_files, decrypt_staging_files, combine_files_to_output
-import multiprocessing
-import multiprocessing_logging
+from multiprocessing import Pool, TimeoutError
+from multiprocessing_logging import install_mp_handler
 from pathlib import Path
-from time import sleep
 
 BIN_SIZE_DEFAULT=32000000000 # just under 32GB
 FILE_MAX_SIZE_DEFAULT=1024*1024*1024 # 1GB
@@ -34,9 +33,6 @@ def init_argparse() -> argparse.ArgumentParser:
 def main() -> None:
     parser = init_argparse()
     parsed_args = parser.parse_args()
-    # TODO Implement multiprocessing for job concurrency.
-    ## multiple config, each having a different args.source (TODO something like: handle multi-valued args.source, per job)
-    ## group child directories into bins, bin_count = source_size / job_count.
     total_size = sum(f.stat().st_size for f in Path(parsed_args.source).glob('**/*') if f.is_file())
     job_bin_size_target = total_size / parsed_args.jobs
     logging.debug("total_size:{} / job count:{} = job_bin_size_target:{} ; ".format(total_size, parsed_args.jobs, job_bin_size_target))
@@ -66,8 +62,12 @@ def main() -> None:
         logging.debug("##  job bin size: {}".format(job_bin_size))
         logging.debug("##  job_to_paths_list: {}".format(job_to_paths_list))
 
-    # Launch processes
-    process_list = []
+    # Multiprocessing pool
+    install_mp_handler(logging.getLogger("packer"))
+    pool = Pool(parsed_args.jobs, initializer=install_mp_handler(logging.getLogger("packer")))
+
+
+    # process_list = []
     job_index = 0
     for child_path in job_to_paths_list:
         logging.debug("## Launching job: {}, for paths_list: {}".format(job_index, child_path))
@@ -84,26 +84,28 @@ def main() -> None:
         # job_output = os.path.join(os.path.normpath(parsed_args.output), job_path_suffix) # subdir per-job
         # job_final_output = parsed_args.output
         job_staging = os.path.join(os.path.normpath(parsed_args.tmp), job_path_suffix) # subdir per-job
-        job_config = PackConfig(job_source, parsed_args.output, job_staging ,parsed_args.binsize, parsed_args.filemaxsize, parsed_args.key, mode)
-        process = multiprocessing.Process(target=execute, args=(job_config, child_path, parsed_args.output))
-        process_list.append(process)
-        process.start()
+        job_config = PackConfig(job_source, parsed_args.output, job_staging,
+                                parsed_args.binsize, parsed_args.filemaxsize,
+                                parsed_args.key, mode, job_index)
+        # process = multiprocessing.Process(target=execute, args=(job_config, child_path, parsed_args.output))
+        # process_list.append(process)
+        # process.start()
+        pool.apply_async(execute, args=(job_config, child_path, parsed_args.output))
         job_index += 1
 
-    logging.debug("## all jobs launched: {}".format(process_list))
+    logging.debug("## all jobs launched.")
 
-    for process in process_list:
-        process.join()
+    pool.close()
+    pool.join()
+    #    for process in process_list:
+    #        process.join()
     logging.debug("## all jobs completed.")
 
     exit(0)
 
 
 def execute(config, paths_list, final_output_path) -> None:
-    # TODO Fix multiprocess logging 
-    multiprocessing_logging.install_mp_handler(logging.getLogger())
-
-    logging.debug("#### Executing Job Process PackConfig:{} , Paths:{}".format(vars(config), paths_list))
+    logging.debug("#### Executing Job. PackConfig:{} , Paths:{}".format(vars(config), paths_list))
     if config.mode == config.MODE_PACK:
         logging.debug("#### packing: {}".format(paths_list))
         pack(config, paths_list)
@@ -165,5 +167,4 @@ if __name__ == "__main__":
         format="%(asctime)s %(levelname)-8s %(message)s",
         datefmt="%d-%b-%y %H:%M:%S",
         level=logging.DEBUG) # TODO raise to INFO default, with verbose option.
-    multiprocessing_logging.install_mp_handler()
     main()

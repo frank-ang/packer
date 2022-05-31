@@ -1,5 +1,6 @@
 import glob, logging, os, re, shutil
 from collections import defaultdict
+from tokenize import Binnumber
 from filecoin_packer.crypt import encrypt, decrypt
 from math import ceil
 import multiprocessing_logging
@@ -15,8 +16,7 @@ multiprocessing_logging.install_mp_handler()
 
 
 class PackConfig:
-    MODE_PACK = "MODE_PACK"
-    MODE_UNPACK = "MODE_UNPACK"
+
     bin_max_bytes = None
     file_max_bytes = None
     source_path = "."
@@ -28,12 +28,16 @@ class PackConfig:
     exclude_patterns = ""
     ENCRYPTED_FILE_SUFFIX = ".encrypted"
     key_path = None
+    mode = None
+    MODE_PACK = "MODE_PACK"
+    MODE_UNPACK = "MODE_UNPACK"
+    job_id = None
 
     @classmethod
-    def from_args(cls, args):
-        return cls(args.source_path, args.output_path, args.staging_base_path, args.binsize, args.args.filemaxsize, args.key, args.mode)
+    def from_args(cls, args, job_id=1):
+        return cls(args.source_path, args.output_path, args.staging_base_path, args.binsize, args.args.filemaxsize, args.key, args.mode, job_id)
 
-    def __init__(self, source_path, output_path, staging_base_path, bin_max_bytes, file_max_bytes, key_path, mode):
+    def __init__(self, source_path, output_path, staging_base_path, bin_max_bytes, file_max_bytes, key_path, mode, job_id=1):
         self.source_path = source_path
         self.output_path = output_path
         self.staging_base_path = staging_base_path
@@ -43,6 +47,7 @@ class PackConfig:
         self.exclude_patterns = [".DS_Store"]
         self.key_path = key_path
         self.mode = mode
+        self.job_id = job_id
 
 
 class Bin:
@@ -54,8 +59,8 @@ class Bin:
     def add(self, filesize):
         self.bin_size += filesize
         return self.bin_size
-    def bin_name(self):
-        return "CAR{}".format(self.bin_id)
+    def bin_name(self, job_id):
+        return "JOB{}-CAR{}".format(job_id, self.bin_id)
 
 
 def bin_source_directory(path, config, bin_list) -> None:
@@ -118,7 +123,7 @@ def bin_source_directory(path, config, bin_list) -> None:
             logging.debug("Bin:{}, BinSize:{}, Path:{} :FileSize:{}".format(
                 cur_bin.bin_id, cur_bin.bin_size, file_to_pack, file_size))
             file_staging_path = os.path.normpath(os.path.join(config.staging_base_path,
-                                cur_bin.bin_name(), relpath))
+                                cur_bin.bin_name(config.job_id), relpath))
             os.makedirs(os.path.dirname(file_staging_path), exist_ok=TRUE)
             # If encrypted, move to staging. If not encrypting, copy to staging.
             if not encrypted_file_path is None:
@@ -155,7 +160,7 @@ def pack_large_file_to_staging(filepath, config, bin_list) -> None:
             path_in_car = os.path.relpath(os.path.dirname(filepath), config.source_path)
             staging_chunkname = os.path.normpath(os.path.join(
                                     config.staging_base_path,
-                                    cur_bin.bin_name(),
+                                    cur_bin.bin_name(config.job_id),
                                     "{}/{}.split.{}".format(
                                         path_in_car,
                                         os.path.basename(filepath),
@@ -210,6 +215,7 @@ def pack_staging_to_car(config) -> None:
         try:
             cmd_out = check_output(ipfs_car_cmd, stderr=STDOUT, shell=True)
             logging.debug("# CAR completed, output: {}".format(cmd_out))
+            # TODO housekeeping: delete car staging data.
         except CalledProcessError as e:
             raise Exception(e.output) from e
 
@@ -218,22 +224,23 @@ def unpack_car_to_staging(config, path) -> None:
     """
     Takes a bunch of CAR files from a source directory, and unpacks into the staging directory.
     """
-    CAR_SUFFIX=".car"
     logging.debug("# unpack_car_to_staging(). path:{}".format(config.source_path))
-    # Find  matching ".car" files
-    CAR_FILE_PATTERN = path + "/**/CAR[0-9]*.car"
-    children = sorted(glob.glob(CAR_FILE_PATTERN, recursive=True))
-    ### 
-    ####with os.scandir(car_file_paths) as iterator: # TODO glob
-    ####    children = list(iterator)
-    #### children.sort(key= lambda x: x.name)
+    children = None
+    if re.match(r'.*CAR[0-9]*.car', path):
+        # Path is a CAR file.
+        logging.debug("Found CAR file: {}".format(path));
+        children = [path]
+    else:
+        # Path Directory.
+        CAR_FILE_PATTERN = path + "/**/CAR[0-9]*.car"
+        # logging.debug("## CAR_FILE_PATTERN: {}".format(CAR_FILE_PATTERN));
+        children = sorted(glob.glob(CAR_FILE_PATTERN, recursive=True))
+        logging.debug("Found directory: {}; CAR files inside: {}".format(path, children))
+
     staging_dir_path = os.path.normpath(config.staging_base_path)
     os.makedirs(staging_dir_path, exist_ok=TRUE)
 
     for car_file_path in children:
-        # if not car_file.name.endswith(CAR_SUFFIX):
-        #   continue
-
         ipfs_car_cmd = "ipfs-car --unpack {} --output {}".format(car_file_path, staging_dir_path) 
         logging.debug("# Unpack CAR executing: {}".format(ipfs_car_cmd))
         try:
