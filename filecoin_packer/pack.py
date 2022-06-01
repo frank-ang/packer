@@ -235,7 +235,7 @@ def unpack_car_to_staging(config, path) -> None:
         children = sorted(glob.glob(CAR_FILE_PATTERN, recursive=True))
         logging.debug("Found directory: {}; CAR files inside: {}".format(path, children))
 
-    staging_dir_path = os.path.normpath(config.staging_base_path)
+    staging_dir_path = os.path.normpath(config.staging_consolidation_path)
     os.makedirs(staging_dir_path, exist_ok=TRUE)
 
     for car_file_path in children:
@@ -310,32 +310,23 @@ def combine_files_to_output(config) -> None:
             raise Exception(e.output) from e
 
 
-def decrypt_staging_files(config, staging_consolidation_path, input_path) -> None:
+def decrypt_staging_files(config, input_path) -> None:
     """
     Traverse into the directory path and decrypt files in-place.
     """
-    logging.debug("# decrypt_staging_files. path: {}".format(input_path))
+    logging.debug("## decrypt_staging_files. path: {}".format(input_path))
 
-    if os.path(input_path).is_file():
+    if os.path.isfile(input_path):
         # decrypt file
         decrypted_path = decrypt(input_path, config)
-        logging.debug("## decrypted {} to: {}".format(input_path, decrypted_path))
-        # os.remove(input_path) # TODO delete encrypted file
-    elif os.path(input_path).is_dir():
-
+        logging.debug("### decrypted {} to: {}".format(input_path, decrypted_path))
+        os.remove(input_path) # TODO delete encrypted file
+    elif os.path.isdir(input_path):
         with os.scandir(input_path) as iterator:
             children = list(iterator)
         children.sort(key= lambda x: x.name)
+        # logging.debug("### decrypt traversing directory: {}, children: {}".format(input_path, children))
         for entry in children:
-            decrypt_staging_files(entry.path, config)
-"""
-    for entry in children:
-        if entry.is_file():
-            # decrypt file
-            decrypted_path = decrypt(entry.path, config)
-            logging.debug("## decrypted to: {}".format(decrypted_path))
-            # delete encrypted file
-            os.remove(entry.path)
-        elif entry.is_dir():
-            decrypt_staging_files(entry.path, config)
-"""
+            decrypt_staging_files(config, entry.path)
+    else:
+        raise Exception("encountered non-file and non-directory.")

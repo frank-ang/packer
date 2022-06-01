@@ -132,19 +132,21 @@ def unpack(config, paths_list) -> None:
     # Pack up the paths_list directories of CAR files into the output, with extraction and reassembly.
     try:
         # 1. Unpack the CAR files to binned staging directories.
-        logging.debug("# unpack_car_to_staging(). paths_list:{}".format(paths_list)) # not printed.
+        logging.debug("#>>> unpack_car_to_staging(). paths_list:{}".format(paths_list))
 
         for child_path in paths_list:
             unpack_car_to_staging(config, child_path)
 
         # 2. Decrypt files.
-        for child_path in paths_list:
-            decrypt_staging_files(config, config.staging_consolidation_path, child_path)
+        logging.debug("#>>> decrypt_staging_files(). staging_consolidation_path:{}".format(config.staging_consolidation_path))
+        decrypt_staging_files(config, config.staging_consolidation_path)
 
         # 3. Join split file parts into original large files.
+        logging.debug("#>>> join_large_files().")
         join_large_files(config)
 
         # 4. Combine the binned staging directories to the output path.
+        logging.debug("#>>> combine_files_to_output().")
         combine_files_to_output(config)
 
     except Exception as e:
