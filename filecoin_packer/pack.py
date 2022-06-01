@@ -310,21 +310,20 @@ def combine_files_to_output(config) -> None:
             raise Exception(e.output) from e
 
 
-def decrypt_staging_files(config, dir_path) -> None:
+def decrypt_staging_files(config, staging_consolidation_path, input_path) -> None:
     """
     Traverse into the directory path and decrypt files in-place.
     """
-    logging.debug("# decrypt_staging_files. path: {}".format(dir_path))
+    logging.debug("# decrypt_staging_files. path: {}".format(input_path))
 
-    if os.path(dir_path).is_file():
+    if os.path(input_path).is_file():
         # decrypt file
-        decrypted_path = decrypt(entry.path, config)
-        logging.debug("## decrypted to: {}".format(decrypted_path))
-        # delete encrypted file
-        os.remove(entry.path)
-    elif os.path(dir_path).is_dir():
+        decrypted_path = decrypt(input_path, config)
+        logging.debug("## decrypted {} to: {}".format(input_path, decrypted_path))
+        # os.remove(input_path) # TODO delete encrypted file
+    elif os.path(input_path).is_dir():
 
-        with os.scandir(dir_path) as iterator:
+        with os.scandir(input_path) as iterator:
             children = list(iterator)
         children.sort(key= lambda x: x.name)
         for entry in children:

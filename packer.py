@@ -3,7 +3,7 @@ from filecoin_packer.pack import Bin, PackConfig
 from filecoin_packer.pack import bin_source_directory, pack_staging_to_car
 from filecoin_packer.pack import unpack_car_to_staging, join_large_files, decrypt_staging_files, combine_files_to_output
 from multiprocessing import Pool, TimeoutError
-from multiprocessing_logging import install_mp_handler, uninstall_mp_handler
+from multiprocessing_logging import install_mp_handler #, uninstall_mp_handler
 from pathlib import Path
 
 BIN_SIZE_DEFAULT=32000000000 # just under 32GB
@@ -86,7 +86,6 @@ def main() -> None:
     logging.debug("## all jobs launched.")
     pool.close()
     pool.join()
-    uninstall_mp_handler() # TODO troubleshoot why unpacking is not logging in sub process.
     logging.debug("## all jobs completed.")
     # Exit.
 
@@ -136,11 +135,11 @@ def unpack(config, paths_list) -> None:
         logging.debug("# unpack_car_to_staging(). paths_list:{}".format(paths_list)) # not printed.
 
         for child_path in paths_list:
-            logging.debug("# unpack_car_to_staging(). path:{}".format(child_path)) # not printed.?
             unpack_car_to_staging(config, child_path)
 
         # 2. Decrypt files.
-        decrypt_staging_files(config, config.staging_consolidation_path)
+        for child_path in paths_list:
+            decrypt_staging_files(config, config.staging_consolidation_path, child_path)
 
         # 3. Join split file parts into original large files.
         join_large_files(config)
