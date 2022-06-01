@@ -3,7 +3,7 @@ from filecoin_packer.pack import Bin, PackConfig
 from filecoin_packer.pack import bin_source_directory, pack_staging_to_car
 from filecoin_packer.pack import unpack_car_to_staging, join_large_files, decrypt_staging_files, combine_files_to_output
 from multiprocessing import Pool, TimeoutError
-from multiprocessing_logging import install_mp_handler
+from multiprocessing_logging import install_mp_handler, uninstall_mp_handler
 from pathlib import Path
 
 BIN_SIZE_DEFAULT=32000000000 # just under 32GB
@@ -63,11 +63,8 @@ def main() -> None:
         logging.debug("##  job_to_paths_list: {}".format(job_to_paths_list))
 
     # Multiprocessing pool
-    install_mp_handler(logging.getLogger("packer"))
-    pool = Pool(parsed_args.jobs, initializer=install_mp_handler(logging.getLogger("packer")))
-
-
-    # process_list = []
+    install_mp_handler()
+    pool = Pool(parsed_args.jobs, initializer=install_mp_handler)
     job_index = 0
     for child_path in job_to_paths_list:
         logging.debug("## Launching job: {}, for paths_list: {}".format(job_index, child_path))
@@ -80,28 +77,18 @@ def main() -> None:
             raise Exception("Pack or Unpack parameter required.") 
         zero_padding_digits = len(str(len(job_to_paths_list)))
         job_path_suffix = "JOB.{}".format(str(job_index).zfill(zero_padding_digits))
-        job_source = parsed_args.source  # parsed_args.source 
-        # job_output = os.path.join(os.path.normpath(parsed_args.output), job_path_suffix) # subdir per-job
-        # job_final_output = parsed_args.output
         job_staging = os.path.join(os.path.normpath(parsed_args.tmp), job_path_suffix) # subdir per-job
-        job_config = PackConfig(job_source, parsed_args.output, job_staging,
+        job_config = PackConfig(parsed_args.source, parsed_args.output, job_staging,
                                 parsed_args.binsize, parsed_args.filemaxsize,
                                 parsed_args.key, mode, job_index)
-        # process = multiprocessing.Process(target=execute, args=(job_config, child_path, parsed_args.output))
-        # process_list.append(process)
-        # process.start()
         pool.apply_async(execute, args=(job_config, child_path, parsed_args.output))
         job_index += 1
-
     logging.debug("## all jobs launched.")
-
     pool.close()
     pool.join()
-    #    for process in process_list:
-    #        process.join()
+    uninstall_mp_handler() # TODO troubleshoot why unpacking is not logging in sub process.
     logging.debug("## all jobs completed.")
-
-    exit(0)
+    # Exit.
 
 
 def execute(config, paths_list, final_output_path) -> None:
@@ -111,12 +98,13 @@ def execute(config, paths_list, final_output_path) -> None:
         pack(config, paths_list)
     elif config.mode == config.MODE_UNPACK:
         logging.debug("#### unpacking: {}".format(paths_list))
-        unpack(config, paths_list, final_output_path)
+        unpack(config, paths_list) # , final_output_path)
 
 
 def pack(config, paths_list) -> None:
     # Pack up the source directory for transport into Filecoin via CAR format.
     logging.debug("## Packing Source: {} ; Paths List: {}".format(config.source_path, paths_list))
+
     try:
 
         # 1. Pack the source directory into binned staging directories. Split large files. Encrypt files.
@@ -137,28 +125,31 @@ def pack(config, paths_list) -> None:
         logging.debug("ID of last bin: {}".format(bin_list[-1].bin_id))
 
     except Exception as e:
-        logging.debug(e)
+        logging.error(e)
         raise
 
 
-def unpack(config, paths_list, final_output_path) -> None:
+def unpack(config, paths_list) -> None:
     # Pack up the paths_list directories of CAR files into the output, with extraction and reassembly.
     try:
+        # 1. Unpack the CAR files to binned staging directories.
+        logging.debug("# unpack_car_to_staging(). paths_list:{}".format(paths_list)) # not printed.
+
         for child_path in paths_list:
-            # 1. Unpack the CAR files to binned staging directories.
+            logging.debug("# unpack_car_to_staging(). path:{}".format(child_path)) # not printed.?
             unpack_car_to_staging(config, child_path)
 
-            # 2. Decrypt files.
-            decrypt_staging_files(config.staging_consolidation_path, config)
+        # 2. Decrypt files.
+        decrypt_staging_files(config, config.staging_consolidation_path)
 
-            # 3. Join split file parts into original large files.
-            join_large_files(config)
+        # 3. Join split file parts into original large files.
+        join_large_files(config)
 
-            # 4. Combine the binned staging directories to the output path.
-            combine_files_to_output(config)
+        # 4. Combine the binned staging directories to the output path.
+        combine_files_to_output(config)
 
     except Exception as e:
-        logging.debug(e)
+        logging.error(e)
         raise
 
 

@@ -3,17 +3,14 @@ from collections import defaultdict
 from tokenize import Binnumber
 from filecoin_packer.crypt import encrypt, decrypt
 from math import ceil
-import multiprocessing_logging
+from multiprocessing_logging import install_mp_handler
 from pickle import TRUE
 from subprocess import CalledProcessError, check_output, STDOUT
-
 
 logging.basicConfig(
     format="%(asctime)s %(levelname)-8s %(message)s",
     datefmt="%d-%b-%y %H:%M:%S",
     level=logging.DEBUG) # TODO raise to INFO default, with verbose option.
-multiprocessing_logging.install_mp_handler()
-
 
 class PackConfig:
 
@@ -209,7 +206,8 @@ def pack_staging_to_car(config) -> None:
     os.makedirs(output_dir_path, exist_ok=TRUE)
     for car_directory in children:
         logging.debug("# packing car from staging bin: {}".format(car_directory.path))
-        ipfs_car_cmd = "ipfs-car --pack {} --output {}.car".format(car_directory.path, 
+        path_to_files = car_directory.path + "/*"
+        ipfs_car_cmd = "ipfs-car --pack {} --output {}.car".format(path_to_files,
             os.path.join(output_dir_path,os.path.basename(car_directory.path)))
         logging.debug("# CAR executing: {}".format(ipfs_car_cmd))
         try:
@@ -224,16 +222,16 @@ def unpack_car_to_staging(config, path) -> None:
     """
     Takes a bunch of CAR files from a source directory, and unpacks into the staging directory.
     """
-    logging.debug("# unpack_car_to_staging(). path:{}".format(config.source_path))
+    logging.debug("# unpack_car_to_staging(). path:{}".format(path))
     children = None
-    if re.match(r'.*CAR[0-9]*.car', path):
-        # Path is a CAR file.
+    if re.match(r'.*JOB[0-9]*-CAR[0-9]*.car', path):
+        # CAR file.
         logging.debug("Found CAR file: {}".format(path));
         children = [path]
     else:
-        # Path Directory.
-        CAR_FILE_PATTERN = path + "/**/CAR[0-9]*.car"
-        # logging.debug("## CAR_FILE_PATTERN: {}".format(CAR_FILE_PATTERN));
+        # Directory.
+        CAR_FILE_PATTERN = path + '/**/JOB[0-9]*-CAR[0-9]*.car'
+        logging.debug("## CAR_FILE_PATTERN: {}".format(CAR_FILE_PATTERN));
         children = sorted(glob.glob(CAR_FILE_PATTERN, recursive=True))
         logging.debug("Found directory: {}; CAR files inside: {}".format(path, children))
 
@@ -257,7 +255,7 @@ def unpack_car_to_staging(config, path) -> None:
     for bin_dir in car_content_paths:
         bin_dir = os.path.normpath(os.path.join(staging_dir_path,bin_dir)) + "/"
         logging.debug("# moving from:{}, to:{}".format(bin_dir, config.staging_consolidation_path))
-        move_cmd = "rsync -a --remove-source-files {} {}".format(bin_dir, config.staging_consolidation_path)
+        move_cmd = "rsync -a {} {}".format(bin_dir, config.staging_consolidation_path) # TODO  --remove-source-files 
         logging.debug("# Moving bin: {}".format(move_cmd))
         try:
             cmd_out = check_output(move_cmd, stderr=STDOUT, shell=True)
@@ -304,7 +302,7 @@ def combine_files_to_output(config) -> None:
     os.makedirs(output_dir_path, exist_ok=TRUE)
 
     logging.debug("# moving from:{}, to:{}".format(staging_dir, output_dir_path))
-    move_cmd = "rsync --remove-source-files -a {} {}".format(staging_dir, output_dir_path)
+    move_cmd = "rsync -a {} {}".format(staging_dir, output_dir_path) # TODO --remove-source-files
     logging.debug("# Moving bin: {}".format(move_cmd))
     try:
         cmd_out = check_output(move_cmd, stderr=STDOUT, shell=True)
@@ -312,14 +310,26 @@ def combine_files_to_output(config) -> None:
             raise Exception(e.output) from e
 
 
-def decrypt_staging_files(dir_path, config) -> None:
+def decrypt_staging_files(config, dir_path) -> None:
     """
     Traverse into the directory path and decrypt files in-place.
     """
-    with os.scandir(dir_path) as iterator:
-        children = list(iterator)
-    children.sort(key= lambda x: x.name)
+    logging.debug("# decrypt_staging_files. path: {}".format(dir_path))
 
+    if os.path(dir_path).is_file():
+        # decrypt file
+        decrypted_path = decrypt(entry.path, config)
+        logging.debug("## decrypted to: {}".format(decrypted_path))
+        # delete encrypted file
+        os.remove(entry.path)
+    elif os.path(dir_path).is_dir():
+
+        with os.scandir(dir_path) as iterator:
+            children = list(iterator)
+        children.sort(key= lambda x: x.name)
+        for entry in children:
+            decrypt_staging_files(entry.path, config)
+"""
     for entry in children:
         if entry.is_file():
             # decrypt file
@@ -329,3 +339,4 @@ def decrypt_staging_files(dir_path, config) -> None:
             os.remove(entry.path)
         elif entry.is_dir():
             decrypt_staging_files(entry.path, config)
+"""
