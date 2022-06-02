@@ -36,11 +36,11 @@ def test_answer():
 @pytest.mark.order(1)
 def test_pack_medium():
     logging.debug("##### #####  test_pack_medium ()   ##### #####")
-    config = PackConfig(SOURCE_PATH, CAR_PATH, STAGING_PATH, BIN_SIZE, MAX_FILE_SIZE, CERTIFICATE)
+    config = PackConfig(SOURCE_PATH, CAR_PATH, STAGING_PATH, BIN_SIZE, MAX_FILE_SIZE, CERTIFICATE, PackConfig.MODE_PACK)
     pack(config)
 
 @pytest.mark.order(2)
 def test_unpack_medium():
     logging.debug("##### ##### test_unpack_medium ()   ##### #####")
-    config = PackConfig(SOURCE_PATH, CAR_PATH, RESTORE_PATH, BIN_SIZE, MAX_FILE_SIZE, PRIVATE_KEY)
+    config = PackConfig(SOURCE_PATH, CAR_PATH, RESTORE_PATH, BIN_SIZE, MAX_FILE_SIZE, PRIVATE_KEY, PackConfig.MODE_UNPACK)
     unpack(config)
