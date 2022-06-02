@@ -206,8 +206,8 @@ def pack_staging_to_car(config) -> None:
     os.makedirs(output_dir_path, exist_ok=TRUE)
     for car_directory in children:
         logging.debug("# packing car from staging bin: {}".format(car_directory.path))
-        path_to_files = car_directory.path + "/*"
-        ipfs_car_cmd = "ipfs-car --pack {} --output {}.car".format(path_to_files,
+        path_to_files = car_directory.path + "/"
+        ipfs_car_cmd = "ipfs-car --wrapWithDirectory false --pack {} --output {}.car".format(path_to_files,
             os.path.join(output_dir_path,os.path.basename(car_directory.path)))
         logging.debug("# CAR executing: {}".format(ipfs_car_cmd))
         try:
@@ -255,7 +255,7 @@ def unpack_car_to_staging(config, path) -> None:
     for bin_dir in car_content_paths:
         bin_dir = os.path.normpath(os.path.join(staging_dir_path,bin_dir)) + "/"
         logging.debug("# moving from:{}, to:{}".format(bin_dir, config.staging_consolidation_path))
-        move_cmd = "rsync -a {} {}".format(bin_dir, config.staging_consolidation_path) # TODO  --remove-source-files 
+        move_cmd = "rsync --remove-source-files -a {} {}".format(bin_dir, config.staging_consolidation_path)
         logging.debug("# Moving bin: {}".format(move_cmd))
         try:
             cmd_out = check_output(move_cmd, stderr=STDOUT, shell=True)
@@ -302,7 +302,7 @@ def combine_files_to_output(config) -> None:
     os.makedirs(output_dir_path, exist_ok=TRUE)
 
     logging.debug("# moving from:{}, to:{}".format(staging_dir, output_dir_path))
-    move_cmd = "rsync -a {} {}".format(staging_dir, output_dir_path) # TODO --remove-source-files
+    move_cmd = "rsync --remove-source-files -a {} {}".format(staging_dir, output_dir_path) # TODO --remove-source-files
     logging.debug("# Moving bin: {}".format(move_cmd))
     try:
         cmd_out = check_output(move_cmd, stderr=STDOUT, shell=True)

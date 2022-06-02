@@ -107,10 +107,7 @@ def pack(config, paths_list) -> None:
     try:
 
         # 1. Pack the source directory into binned staging directories. Split large files. Encrypt files.
-        # TODO multiprocess the bin of paths.
         bin_list = [Bin(0)]
-        # deprecated: following is single-threaded
-        # bin_source_directory(config.source_path, config, bin_list)
 
         for child_path in paths_list:
             bin_source_directory(child_path, config, bin_list)

@@ -86,9 +86,9 @@ test_pack_jobs:
 	@echo "📦📦📦📦 Testing Packing with concurrency Max file size: ${MAX_FILE_SIZE} 📦📦📦📦"
 	time python ./packer.py --pack --source ${SOURCE_PATH} --tmp ${STAGING_PATH} --output ${CAR_PATH} --binsize ${BIN_SIZE} --filemaxsize $(MAX_FILE_SIZE) --key $(CERTIFICATE) --jobs $(JOBS)
 
-test_unpack_jobs: JOBS=1
+test_unpack_jobs: JOBS=2
 test_unpack_jobs:
-	@echo "ENTER to proceed... " && read PROCEED
+# @echo "ENTER to proceed... " && read PROCEED
 	@rm -rf ${STAGING_PATH}/*
 	@rm -rf ${RESTORE_PATH}/*
 	@echo "📦📦📦📦 Testing Unpacking. Test: $@ 📦📦📦📦"
