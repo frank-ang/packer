@@ -16,9 +16,9 @@ def init_argparse() -> argparse.ArgumentParser:
         description='Filecoin filesystem packager/unpackager',
         usage='python packer.py [--pack|--unpack] [-s SOURCE_PATH] [-t TEMP_PATH] [-o OUTPUT_PATH] [-b BIN_SIZE] [-k ENCRYPTION_KEY]',
         epilog="Alpha version.")
-    group = parser.add_mutually_exclusive_group(required=True)
-    group.add_argument('-p', '--pack', action=argparse.BooleanOptionalAction, help='Pack mode')
-    group.add_argument('-u', '--unpack', action=argparse.BooleanOptionalAction, help='Unpack mode')
+    # group = parser.add_mutually_exclusive_group(required=True)
+    parser.add_argument('-p', '--pack', action="store_true", default=False, help='Pack mode')
+    parser.add_argument('-u', '--unpack', action="store_true", default=False, help='Unpack mode')
     parser.add_argument('-s', '--source', required=True, help='In Pack mode, the path to the original source data. In Unpack mode, the path containing CAR files.')
     parser.add_argument('-t', '--tmp', required=True, help='Path to temporary staging directory. Currently, required temp size > 1x of source data size.') # TODO, indicate staging dir memory requirement as factor of source data size. Currently, its shit, >1x source_size. TODO: Implent CAR-by-CAR micro-batching to optimize staging space required.
     parser.add_argument('-o', '--output', required=True, help='Path to write output of packaged or unpackaged content.')
@@ -81,7 +81,7 @@ def main() -> None:
         job_config = PackConfig(parsed_args.source, parsed_args.output, job_staging,
                                 parsed_args.binsize, parsed_args.filemaxsize,
                                 parsed_args.key, mode, job_index)
-        pool.apply_async(execute, args=(job_config, child_path, parsed_args.output))
+        pool.apply_async(execute, args=(job_config, child_path))
         job_index += 1
     logging.debug("## all jobs launched.")
     pool.close()
@@ -90,7 +90,7 @@ def main() -> None:
     # Exit.
 
 
-def execute(config, paths_list, final_output_path) -> None:
+def execute(config, paths_list) -> None:
     logging.debug("#### Executing Job. PackConfig:{} , Paths:{}".format(vars(config), paths_list))
     if config.mode == config.MODE_PACK:
         logging.debug("#### packing: {}".format(paths_list))
