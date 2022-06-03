@@ -6,6 +6,7 @@ from multiprocessing import Pool, TimeoutError
 from multiprocessing_logging import install_mp_handler #, uninstall_mp_handler
 from pathlib import Path
 
+
 BIN_SIZE_DEFAULT=32000000000 # just under 32GB
 FILE_MAX_SIZE_DEFAULT=1024*1024*1024 # 1GB
 JOB_CONCURRENCY_DEFAULT=1
@@ -20,7 +21,7 @@ def init_argparse() -> argparse.ArgumentParser:
     parser.add_argument('-p', '--pack', action="store_true", default=False, help='Pack mode')
     parser.add_argument('-u', '--unpack', action="store_true", default=False, help='Unpack mode')
     parser.add_argument('-s', '--source', required=True, help='In Pack mode, the path to the original source data. In Unpack mode, the path containing CAR files.')
-    parser.add_argument('-t', '--tmp', required=True, help='Path to temporary staging directory. Currently, required temp size > 1x of source data size.') # TODO, indicate staging dir memory requirement as factor of source data size. Currently, its shit, >1x source_size. TODO: Implent CAR-by-CAR micro-batching to optimize staging space required.
+    parser.add_argument('-t', '--tmp', required=True, help='Path to temporary staging directory. Currently, required temp size > 1x of source data size.') # TODO, staging storage space requires >1x source data size. TODO: Implent CAR-by-CAR micro-batching to reduce staging space requirements.
     parser.add_argument('-o', '--output', required=True, help='Path to write output of packaged or unpackaged content.')
     parser.add_argument('-b', '--binsize', required=False, default=BIN_SIZE_DEFAULT, type=int, help='Bin size bytes (default: {})'.format(BIN_SIZE_DEFAULT))
     parser.add_argument('-m', '--filemaxsize', required=False, default=FILE_MAX_SIZE_DEFAULT, type=int, help='File max size bytes (default: {})'.format(FILE_MAX_SIZE_DEFAULT))

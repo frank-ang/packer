@@ -7,6 +7,8 @@ from multiprocessing_logging import install_mp_handler
 from pickle import TRUE
 from subprocess import CalledProcessError, check_output, STDOUT
 
+FILE_READ_BUFFER_SIZE = 1024 * 1024
+
 logging.basicConfig(
     format="%(asctime)s %(levelname)-8s %(message)s",
     datefmt="%d-%b-%y %H:%M:%S",
@@ -149,7 +151,6 @@ def pack_large_file_to_staging(filepath, config, bin_list) -> None:
 
     with open(filepath, mode='rb') as orig:
 
-        FILE_READ_BUFFER_SIZE = 16 * 1024
         chunk_fragment = orig.read(FILE_READ_BUFFER_SIZE)
         chunk_bytes = 0
         chunk_write_bytes = 0
@@ -213,7 +214,6 @@ def pack_staging_to_car(config) -> None:
         try:
             cmd_out = check_output(ipfs_car_cmd, stderr=STDOUT, shell=True)
             logging.debug("# CAR completed, output: {}".format(cmd_out))
-            # TODO housekeeping: delete car staging data.
         except CalledProcessError as e:
             raise Exception(e.output) from e
 
@@ -281,7 +281,6 @@ def join_large_files(config) -> None:
     # Join the parts
     for large_filename in large_file_map:
         logging.debug("# joining {} from parts: {}".format(large_filename, large_file_map[large_filename]))
-        FILE_READ_BUFFER_SIZE = 16 * 1024
         with open(large_filename, "wb") as joined_file:
             for part_file_path in large_file_map[large_filename]:
                 with open(part_file_path, "rb") as part_file:
@@ -320,7 +319,7 @@ def decrypt_staging_files(config, input_path) -> None:
         # decrypt file
         decrypted_path = decrypt(input_path, config)
         logging.debug("### decrypted {} to: {}".format(input_path, decrypted_path))
-        os.remove(input_path) # TODO delete encrypted file
+        os.remove(input_path) # delete encrypted input file
     elif os.path.isdir(input_path):
         with os.scandir(input_path) as iterator:
             children = list(iterator)

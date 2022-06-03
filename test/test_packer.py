@@ -3,7 +3,7 @@ from filecoin_packer.pack import PackConfig
 from filecmp import dircmp
 import logging
 from os import path
-from packer import JOB_CONCURRENCY_DEFAULT, pack, unpack, main
+from packer import JOB_CONCURRENCY_DEFAULT, BIN_SIZE_DEFAULT, FILE_MAX_SIZE_DEFAULT, pack, unpack, main
 import pytest
 from shutil import rmtree
 from subprocess import CalledProcessError, check_output, STDOUT
@@ -16,18 +16,10 @@ STAGING_PATH="./test/staging"
 CAR_PATH="./test/car"
 RESTORE_PATH="./test/restore"
 JOB_CONCURRENCY=2
-
-# Bin Size and Max Filesize (both should be set to identical values) in Bytes
-#  For 32GB Sector size, the usable size should be 34,091,302,912 bytes
-#  https://lotus.filecoin.io/tutorials/lotus/large-files/
-# TODO Verify what should be the optimum value. Test with 34091302912
-#BIN_SIZE=32000000000
-#MAX_FILE_SIZE=32000000000
-BIN_SIZE=100
-MAX_FILE_SIZE=100
 CERTIFICATE_ROOT="./test/security.rsa.gitignore"
 CERTIFICATE=CERTIFICATE_ROOT + "/certificate.pem"
 PRIVATE_KEY=CERTIFICATE_ROOT + "/private_key.pem"
+
 
 logging.basicConfig(
         format="%(asctime)s %(levelname)-8s %(message)s",
@@ -41,8 +33,8 @@ logging.basicConfig(
                                             source=SOURCE_PATH,
                                             tmp=STAGING_PATH,
                                             output=CAR_PATH,
-                                            binsize=BIN_SIZE,
-                                            filemaxsize=MAX_FILE_SIZE,
+                                            binsize=BIN_SIZE_DEFAULT,
+                                            filemaxsize=FILE_MAX_SIZE_DEFAULT,
                                             key=CERTIFICATE,
                                             jobs=JOB_CONCURRENCY))
 def test_pack_command(mock_args):
@@ -61,8 +53,8 @@ def test_pack_command(mock_args):
                                             source=CAR_PATH,
                                             tmp=STAGING_PATH,
                                             output=RESTORE_PATH,
-                                            binsize=BIN_SIZE,
-                                            filemaxsize=MAX_FILE_SIZE,
+                                            binsize=BIN_SIZE_DEFAULT,
+                                            filemaxsize=FILE_MAX_SIZE_DEFAULT,
                                             key=PRIVATE_KEY,
                                             jobs=JOB_CONCURRENCY))
 def test_unpack_command(mock_args):
@@ -73,7 +65,6 @@ def test_unpack_command(mock_args):
     except TypeError as e:
         logging.debug("caught exception: {}".format(e))
     assertSame(SOURCE_PATH, RESTORE_PATH)
-
 
 
 def assertSame(dir1, dir2):
