@@ -42,14 +42,14 @@ Resources:
       SecurityGroupIds:
       - !Ref SecurityGroup
       KeyName: !Ref KeyPair
-      InstanceType: r5.2xlarge # r5.2xlarge # TODO season to taste
+      InstanceType: r5d.2xlarge # TODO season to taste
       AvailabilityZone: !Ref AZ
       ImageId: !Ref LatestUbuntuFocalAMI
       BlockDeviceMappings:
         - DeviceName: /dev/sda1
           Ebs:
             VolumeType: gp3
-            VolumeSize: '1000' # '1000'  # TODO season to taste
+            VolumeSize: 1000  # TODO season to taste
       Tags:
         - Key: Name
           Value: packer-test
@@ -88,6 +88,15 @@ Resources:
           make init_testdata && make test
 
           apt install -y sysstat iotop
+
+          # For EC2 instance types with NVMe (SSD) instance store volumes ONLY
+          mkfs -t xfs /dev/nvme1n1
+          apt install -y xfsprogs
+          mkdir /local
+          mount /dev/nvme1n1 /local
+
+
+# TODO add NFS and mount.
 
 Outputs:
   InstanceId:
