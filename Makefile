@@ -56,6 +56,7 @@ test_pack_large: JOBS=1
 test_pack_xl: SOURCE_PATH=${XL_DATA_PATH}
 test_pack_xl: JOBS=8
 test_pack_xl: STAGING_PATH=/local/staging
+test_pack_xl: CERTIFICATE_ROOT=/root/security.rsa.gitignore
 test_pack_xl: init_testdata
 test_pack_small test_pack_medium test_pack_large test_pack_xl:
 	@echo
