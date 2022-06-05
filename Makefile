@@ -1,7 +1,7 @@
 SHELL=/bin/bash
 SOURCE_PATH:=./test/source
 LARGE_DATA_PATH:=./test/large-source
-XL_DATA_PATH:=./nfs/xl-source
+XL_DATA_PATH:=/nfs/xl-source
 STAGING_PATH:=./test/staging
 CAR_PATH:=./test/car
 RESTORE_PATH:=./test/restore
