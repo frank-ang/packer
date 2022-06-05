@@ -89,6 +89,11 @@ Resources:
 
           apt install -y sysstat iotop
 
+          # AWS CLI
+          curl "https://awscli.amazonaws.com/awscli-exe-linux-x86_64.zip" -o "awscliv2.zip"\
+          unzip awscliv2.zip
+          ./aws/install
+
           # For EC2 instance types with NVMe (SSD) instance store volumes ONLY
           mkfs -t xfs /dev/nvme1n1
           apt install -y xfsprogs
