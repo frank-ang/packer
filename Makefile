@@ -1,7 +1,7 @@
 SHELL=/bin/bash
 SOURCE_PATH:=./test/source
 LARGE_DATA_PATH:=./test/large-source
-XL_DATA_PATH:=./test/xl-source
+XL_DATA_PATH:=./nfs/xl-source
 STAGING_PATH:=./test/staging
 CAR_PATH:=./test/car
 RESTORE_PATH:=./test/restore
@@ -148,6 +148,7 @@ init_xldata: 0.init_xldata_bin 1.init_xldata_bin 2.init_xldata_bin 3.init_xldata
 
 # Generate test data in 1 bin. 10GB
 %.init_xldata_bin:
+	@mkdir -p ${XL_DATA_PATH}
 	@echo "##🛠 Bin:$*, creating 1KiB files..."
 	./test/gen-large-test-data.sh -c 1000 -s 1024 -p dummy-KiB -d "${XL_DATA_PATH}/$*/1KiB"
 	@echo "##🛠 Bin:$*, creating 1MiB files..." 
