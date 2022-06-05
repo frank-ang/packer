@@ -1,7 +1,7 @@
 SHELL=/bin/bash
 SOURCE_PATH:=./test/source
 LARGE_DATA_PATH:=./test/large-source
-XL_DATA_PATH:=./nfs/xl-source
+XL_DATA_PATH:=/nfs/xl-source
 STAGING_PATH:=./test/staging
 CAR_PATH:=./test/car
 RESTORE_PATH:=./test/restore
@@ -56,6 +56,7 @@ test_pack_large: SOURCE_PATH=${LARGE_DATA_PATH}
 test_pack_large: JOBS=1
 test_pack_xl: SOURCE_PATH=${XL_DATA_PATH}
 test_pack_xl: JOBS=8
+test_pack_xl: STAGING_PATH=
 test_pack_small test_pack_medium test_pack_large test_pack_xl:
 	@echo
 	@echo "🧹 cleaning... 🧹"
