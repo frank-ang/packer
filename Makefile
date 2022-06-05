@@ -162,13 +162,13 @@ init_xldata: 0.init_xldata_bin 1.init_xldata_bin 2.init_xldata_bin 3.init_xldata
 create_load_test_instance:
 	@echo "Launching AWS EC2 instance for load test".
 	aws cloudformation validate-template --template-body file://${AWS_CFN_TEMPLATE_FILE}
-	aws cloudformation deploy --capabilities CAPABILITY_IAM \
+	time aws cloudformation deploy --capabilities CAPABILITY_IAM \
       --template-file ./${AWS_CFN_TEMPLATE_FILE}  \
       --parameter-overrides "VPC=${AWS_VPC}" "AZ=${AWS_AZ}" "SubnetId=${AWS_SUBNET}" \
          "KeyPair=${AWS_KEY_PAIR}" "SecurityGroup=${AWS_SECURITY_GROUP}" "InstanceProfile=${AWS_INSTANCE_PROFILE}" \
       --stack-name "filecoin-packer-test" \
       --tags "project=filecoin"
- 	aws cloudformation describe-stacks --stack-name filecoin-packer-test | jq '.Stacks[].Outputs[]|select(.OutputKey=="PublicIP").OutputValue' -r  
+	@echo `aws cloudformation describe-stacks --stack-name filecoin-packer-test` | jq '.Stacks[].Outputs[]|select(.OutputKey=="PublicIP").OutputValue' -r
 
 delete_load_test_instance:
 	aws cloudformation delete-stack --stack-name filecoin-packer-test
