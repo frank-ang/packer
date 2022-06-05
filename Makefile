@@ -46,7 +46,7 @@ test_all: test_small test_medium
 test_small: test_pack_small test_unpack_small
 test_medium: test_pack_medium test_unpack_medium
 test_large: test_pack_large test_unpack_large
-test_xl: test_pack_xl test_unpack_xl
+test_xl: init_testdata test_pack_xl test_unpack_xl
 
 test_pack_small: BIN_SIZE=4096
 test_pack_small: MAX_FILE_SIZE=40
