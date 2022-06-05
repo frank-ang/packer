@@ -59,7 +59,7 @@ Resources:
           #!/bin/bash
           echo "## Installing Dependencies..."
           apt update
-          apt install git openssl rsync make -y
+          apt install git openssl rsync make jq -y
           apt install software-properties-common -y
           add-apt-repository ppa:deadsnakes/ppa -y
           apt install python3.10 -y   # latest ubuntu on AWS has only Python 3.8.10
