@@ -42,14 +42,14 @@ Resources:
       SecurityGroupIds:
       - !Ref SecurityGroup
       KeyName: !Ref KeyPair
-      InstanceType: r5.2xlarge # r5.2xlarge # TODO season to taste
+      InstanceType: r5d.2xlarge # TODO season to taste
       AvailabilityZone: !Ref AZ
       ImageId: !Ref LatestUbuntuFocalAMI
       BlockDeviceMappings:
         - DeviceName: /dev/sda1
           Ebs:
             VolumeType: gp3
-            VolumeSize: '1000' # '1000'  # TODO season to taste
+            VolumeSize: 1000  # TODO season to taste
       Tags:
         - Key: Name
           Value: packer-test
@@ -59,7 +59,7 @@ Resources:
           #!/bin/bash
           echo "## Installing Dependencies..."
           apt update
-          apt install git openssl rsync make -y
+          apt install git openssl rsync make jq -y
           apt install software-properties-common -y
           add-apt-repository ppa:deadsnakes/ppa -y
           apt install python3.10 -y   # latest ubuntu on AWS has only Python 3.8.10
@@ -88,6 +88,51 @@ Resources:
           make init_testdata && make test
 
           apt install -y sysstat iotop
+
+          # AWS CLI
+          curl "https://awscli.amazonaws.com/awscli-exe-linux-x86_64.zip" -o "awscliv2.zip"\
+          unzip awscliv2.zip
+          ./aws/install
+
+          # For EC2 instance types with NVMe (SSD) instance store volumes ONLY
+          mkfs -t xfs /dev/nvme1n1
+          apt install -y xfsprogs
+          mkdir /local
+          mount /dev/nvme1n1 /local
+
+          # mount NFS.
+          mkdir /nfs
+          mount -t nfs -o nfsvers=4.1,rsize=1048576,wsize=1048576,hard,timeo=600,retrans=2,noresvport ${MountTarget}   ~/efs-mount-point  
+
+
+# EFS (NFS) resources. 
+#  MountTargetSecurityGroup:
+#    Type: AWS::EC2::SecurityGroup
+#    Properties:
+#      VpcId:
+#        Ref: VPC
+#      GroupDescription: Security group for mount target
+#      SecurityGroupIngress:
+#      - IpProtocol: tcp
+#        FromPort: 2049
+#        ToPort: 2049
+#        CidrIp: 0.0.0.0/0
+
+  FileSystem:
+    Type: AWS::EFS::FileSystem
+    Properties:
+      PerformanceMode: generalPurpose
+
+  MountTarget:
+    Type: AWS::EFS::MountTarget
+    Properties:
+      FileSystemId:
+        Ref: FileSystem
+      SubnetId:
+        Ref: SubnetId
+      SecurityGroups:
+      - Ref: SecurityGroup
+
 
 Outputs:
   InstanceId:

@@ -4,7 +4,12 @@ orbs:
 workflows:
   build_and_test:
     jobs:
-      - tests
+      - tests:
+          filters:
+            branches:
+              only: 
+                - master
+                - test
 
 executors:
   my-executor:
@@ -39,6 +44,9 @@ jobs:
             sudo apt-get install -y rsync
             sudo npm install -g ipfs-car
             pip install -r requirements.txt
+            curl "https://awscli.amazonaws.com/awscli-exe-linux-x86_64.zip" -o "awscliv2.zip"
+            sudo unzip awscliv2.zip
+            sudo ./aws/install
       - run:
           name: Initialize tests, generate key pair.
           command: |
