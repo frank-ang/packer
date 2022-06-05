@@ -42,7 +42,6 @@ test: clean test_all
 
 test_all: test_small test_medium
 
-# Usage: ```time make test_xl >> test_xl.log 2>&1```
 test_small: test_pack_small test_unpack_small
 test_medium: test_pack_medium test_unpack_medium
 test_large: test_pack_large test_unpack_large
@@ -69,7 +68,6 @@ test_pack_small test_pack_medium test_pack_large test_pack_xl:
 
 test_unpack_large: SOURCE_PATH=${LARGE_DATA_PATH}
 test_unpack_large: JOBS=1
-test_unpack_xl: SOURCE_PATH=${XL_DATA_PATH}
 test_unpack_xl: JOBS=8
 test_unpack_small test_unpack_medium test_unpack_large test_unpack_xl:
 	@rm -rf ${STAGING_PATH}/*
