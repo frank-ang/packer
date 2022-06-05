@@ -76,25 +76,7 @@ test_unpack_small test_unpack_medium test_unpack_large test_unpack_xl:
 	@echo "📦📦📦📦 Testing Unpacking. Test: $@ 📦📦📦📦"
 	time python ./packer.py --unpack --source ${CAR_PATH} --tmp ${STAGING_PATH} --output ${RESTORE_PATH} --key $(PRIVATE_KEY) --jobs $(JOBS)
 	@echo "📦📦📦📦 Verifying test output..."
-	@(diff --brief --recursive ${SOURCE_PATH} ${RESTORE_PATH} && echo "Test: $@, Result: [PASSED]") || (echo "Test: $@, Result: [FAILED]" && exit 1)
-
-test_jobs: init_testdata test_pack_jobs test_unpack_jobs
-
-test_pack_jobs: MAX_FILE_SIZE=1024
-test_pack_jobs: JOBS=2
-test_pack_jobs:
-	@echo; echo "📦📦📦📦 Test: $@ 📦📦📦📦"
-	@echo "📦📦📦📦 Testing Packing with concurrency Max file size: ${MAX_FILE_SIZE} 📦📦📦📦"
-	time python ./packer.py --pack --source ${SOURCE_PATH} --tmp ${STAGING_PATH} --output ${CAR_PATH} --binsize ${BIN_SIZE} --filemaxsize $(MAX_FILE_SIZE) --key $(CERTIFICATE) --jobs $(JOBS)
-
-test_unpack_jobs: JOBS=2
-test_unpack_jobs:
-	@rm -rf ${STAGING_PATH}/*
-	@rm -rf ${RESTORE_PATH}/*
-	@echo "📦📦📦📦 Testing Unpacking. Test: $@ 📦📦📦📦"
-	time python ./packer.py --unpack --source ${CAR_PATH} --tmp ${STAGING_PATH} --output ${RESTORE_PATH} --key $(PRIVATE_KEY) --jobs $(JOBS)
-	@echo "📦📦📦📦 Verifying test output..."
-	@(diff --brief --recursive ${SOURCE_PATH} ${RESTORE_PATH} && echo "Test: $@, Result: [PASSED]") || (echo "Test: $@, Result: [FAILED]" && exit 1)
+	@(time diff --brief --recursive ${SOURCE_PATH} ${RESTORE_PATH} && echo "Test: $@, Result: [PASSED]") || (echo "Test: $@, Result: [FAILED]" && exit 1)
 
 
 pytest: clean init_testdata
@@ -106,13 +88,13 @@ clean: clean_test
 
 clean_test:
 	@echo "🧹 cleaning... 🧹"
-	@rm -rf ${STAGING_PATH}
-	@rm -rf ${CAR_PATH}
-	@rm -rf ${RESTORE_PATH}
-	@rm -rf ${LARGE_DATA_PATH}
+	@rm -rf ${STAGING_PATH}/*
+	@rm -rf ${CAR_PATH}/*
+	@rm -rf ${RESTORE_PATH}/*
+	@rm -rf ${LARGE_DATA_PATH}/*
 
 clean_xldata:
-	@rm -rf ${XL_DATA_PATH}
+	@rm -rf ${XL_DATA_PATH}/*
 
 init_testdata: clean_test init_certificate_pair
 
@@ -185,7 +167,7 @@ create_load_test_instance:
          "KeyPair=${AWS_KEY_PAIR}" "SecurityGroup=${AWS_SECURITY_GROUP}" "InstanceProfile=${AWS_INSTANCE_PROFILE}" \
       --stack-name "filecoin-packer-test" \
       --tags "project=filecoin"
-
+ 	aws cloudformation describe-stacks --stack-name filecoin-packer-test | jq '.Stacks[].Outputs[]|select(.OutputKey=="PublicIP").OutputValue' -r  
 
 delete_load_test_instance:
 	aws cloudformation delete-stack --stack-name filecoin-packer-test

@@ -95,8 +95,39 @@ Resources:
           mkdir /local
           mount /dev/nvme1n1 /local
 
+          # mount NFS.
+          mkdir /nfs
+          mount -t nfs -o nfsvers=4.1,rsize=1048576,wsize=1048576,hard,timeo=600,retrans=2,noresvport ${MountTarget}   ~/efs-mount-point  
 
-# TODO add NFS and mount.
+
+# EFS (NFS) resources. 
+#  MountTargetSecurityGroup:
+#    Type: AWS::EC2::SecurityGroup
+#    Properties:
+#      VpcId:
+#        Ref: VPC
+#      GroupDescription: Security group for mount target
+#      SecurityGroupIngress:
+#      - IpProtocol: tcp
+#        FromPort: 2049
+#        ToPort: 2049
+#        CidrIp: 0.0.0.0/0
+
+  FileSystem:
+    Type: AWS::EFS::FileSystem
+    Properties:
+      PerformanceMode: generalPurpose
+
+  MountTarget:
+    Type: AWS::EFS::MountTarget
+    Properties:
+      FileSystemId:
+        Ref: FileSystem
+      SubnetId:
+        Ref: SubnetId
+      SecurityGroups:
+      - Ref: SecurityGroup
+
 
 Outputs:
   InstanceId:
