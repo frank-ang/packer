@@ -42,39 +42,26 @@ Post-MVP, it will be essential to run scalability tests and benchmarks.
 # Usage:
 
 ```
-NAME
-    packer - Filecoin filesystem packager/unpackager
+usage: python packer.py [--pack|--unpack] [-s SOURCE_PATH] [-t TEMP_PATH] [-o OUTPUT_PATH] [-b BIN_SIZE] [-k ENCRYPTION_KEY]
 
-SYNOPSIS
+Filecoin filesystem packager/unpackager
 
-    python packer.py [-p|-u] [-s SOURCE_PATH] [-t TEMP_PATH] [-o OUTPUT_PATH] [-b BIN_SIZE] [-k ENCRYPTION_KEY]
+options:
+  -h, --help            show this help message and exit
+  -p, --pack            Pack mode
+  -u, --unpack          Unpack mode
+  -s SOURCE, --source SOURCE
+                        In Pack mode, the path to the original source data. In Unpack mode, the path containing CAR files.
+  -t TMP, --tmp TMP     Path to temporary staging directory. Currently, required temp size > 1x of source data size.
+  -o OUTPUT, --output OUTPUT
+                        Path to write output of packaged or unpackaged content.
+  -k KEY, --key KEY     RSA Cryptographic Key or Certificate
+  -b BINSIZE, --binsize BINSIZE
+                        [optional] Bin size bytes (default: 32000000000)
+  -m FILEMAXSIZE, --filemaxsize FILEMAXSIZE
+                        [optional] File max size bytes (default: 1073741824)
+  -j JOBS, --jobs JOBS  [optional] Job concurrency suggestion (default: 1)
 
-OPTIONS
-
-    -p, --pack
-        pack mode
-
-    -u, --unpack
-        unpack mode
-
-    -s SOURCE_PATH, --source SOURCE_PATH
-        During packing, the path to the pre-packed source data.
-        During unpacking, the path containing CAR files of packed data.
-
-    -t TEMP_PATH, --temp TEMP_PATH
-        Path to temporary staging directory. 
-
-    -o OUTPUT_PATH, --output OUTPUT_PATH
-        Path to write final output of packaged or unpackaged content.
-        
-    -b BIN_SIZE, --bin BIN_SIZE
-        BIN_SIZE in bytes, default 32GB
-
-    -k, --key
-        Encryption certificate or private key.
-
-    -h, --help
-        help
 ```
 
 
