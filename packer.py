@@ -21,12 +21,13 @@ def init_argparse() -> argparse.ArgumentParser:
     parser.add_argument('-p', '--pack', action="store_true", default=False, help='Pack mode')
     parser.add_argument('-u', '--unpack', action="store_true", default=False, help='Unpack mode')
     parser.add_argument('-s', '--source', required=True, help='In Pack mode, the path to the original source data. In Unpack mode, the path containing CAR files.')
-    parser.add_argument('-t', '--tmp', required=True, help='Path to temporary staging directory. Currently, required temp size > 1x of source data size.') # TODO, staging storage space requires >1x source data size. TODO: Implent CAR-by-CAR micro-batching to reduce staging space requirements.
+    # TODO, staging storage space requires >1x source data size. TODO: Implent CAR-by-CAR micro-batching to reduce staging space requirements.
+    parser.add_argument('-t', '--tmp', required=True, help='Path to temporary staging directory. Currently, required temp size > 1x of source data size.')
     parser.add_argument('-o', '--output', required=True, help='Path to write output of packaged or unpackaged content.')
-    parser.add_argument('-b', '--binsize', required=False, default=BIN_SIZE_DEFAULT, type=int, help='Bin size bytes (default: {})'.format(BIN_SIZE_DEFAULT))
-    parser.add_argument('-m', '--filemaxsize', required=False, default=FILE_MAX_SIZE_DEFAULT, type=int, help='File max size bytes (default: {})'.format(FILE_MAX_SIZE_DEFAULT))
-    parser.add_argument('-k', '--key', required=False, help='Cryptographic Key or Certificate')
-    parser.add_argument('-j', '--jobs', required=False, default=JOB_CONCURRENCY_DEFAULT, type=int, help='Job concurrency suggestion (default: {})'.format(JOB_CONCURRENCY_DEFAULT))
+    parser.add_argument('-k', '--key', required=True, help='RSA Cryptographic Key or Certificate')
+    parser.add_argument('-b', '--binsize', required=False, default=BIN_SIZE_DEFAULT, type=int, help='[optional] Bin size bytes (default: {})'.format(BIN_SIZE_DEFAULT))
+    parser.add_argument('-m', '--filemaxsize', required=False, default=FILE_MAX_SIZE_DEFAULT, type=int, help='[optional] File max size bytes (default: {})'.format(FILE_MAX_SIZE_DEFAULT))
+    parser.add_argument('-j', '--jobs', required=False, default=JOB_CONCURRENCY_DEFAULT, type=int, help='[optional] Job concurrency suggestion (default: {})'.format(JOB_CONCURRENCY_DEFAULT))
 
     return parser
 
