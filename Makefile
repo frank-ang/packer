@@ -42,11 +42,10 @@ test: clean test_all
 
 test_all: test_small test_medium
 
-# Usage: ```time make test_xl >> test_xl.log 2>&1```
 test_small: test_pack_small test_unpack_small
 test_medium: test_pack_medium test_unpack_medium
 test_large: test_pack_large test_unpack_large
-test_xl: test_pack_xl test_unpack_xl
+test_xl: init_testdata test_pack_xl test_unpack_xl
 
 test_pack_small: BIN_SIZE=4096
 test_pack_small: MAX_FILE_SIZE=40
@@ -56,6 +55,9 @@ test_pack_large: SOURCE_PATH=${LARGE_DATA_PATH}
 test_pack_large: JOBS=1
 test_pack_xl: SOURCE_PATH=${XL_DATA_PATH}
 test_pack_xl: JOBS=8
+test_pack_xl: STAGING_PATH=/local/staging
+test_pack_xl: CERTIFICATE_ROOT=/root/security.rsa.gitignore
+test_pack_xl: init_testdata
 test_pack_small test_pack_medium test_pack_large test_pack_xl:
 	@echo
 	@echo "🧹 cleaning... 🧹"
@@ -68,6 +70,7 @@ test_pack_small test_pack_medium test_pack_large test_pack_xl:
 
 test_unpack_large: SOURCE_PATH=${LARGE_DATA_PATH}
 test_unpack_large: JOBS=1
+test_unpack_xl: STAGING_PATH=/local/staging
 test_unpack_xl: SOURCE_PATH=${XL_DATA_PATH}
 test_unpack_xl: JOBS=8
 test_unpack_small test_unpack_medium test_unpack_large test_unpack_xl:
@@ -121,11 +124,6 @@ init_largedata: init_testdata
 	@echo "🛠 completed large test data creation. File count: "`find ${LARGE_DATA_PATH}/ -type f | wc -l`" , total size: "`du -sh ${LARGE_DATA_PATH}`" 🛠"
 
 # Init Jumbo sized test data in parallel.
-# Usage:
-# ```
-# make init_testdata  # prereq should be run in serial.
-# make -j 5 init_xldata  # parallel execution.
-# ```
 # Generate random test data on-demand, e.g.
 #  *   1TB test: 9x100GB 90x1GB 9000x1MB  1000000x1KB 
 #  * 200GB test: 1000*1K + 99*1M + 2*1G + 1*50G =  52 G
@@ -133,6 +131,7 @@ init_largedata: init_testdata
 #  * Serial   200GB on Macbook pro: ~10m
 #  * Serial   200GB on AWS (EC2 r5.2xlarge, 1TB gp3 EBS): 29m27.544s; 30m28.261s
 #  * Parallel 200GB on AWS (EC2 r5.2xlarge, 1TB gp3 EBS): 27m20.517s; 26m52.510s (looks like bottleneck is in jumbo generation?)
+#  * Parallel 100GB on AWS with EC2 r5d.2xlarge, 1TB gp3 EBS, NVMe SSD at /local
 #  *   1TB on AWS (EC2 2xlarge, 3000GB gp3 EBS): TODO
 #
 # Side Note: Not cost-optimal to store & retrieve pre-generated test data from S3.
@@ -141,7 +140,7 @@ init_largedata: init_testdata
 # *  https://calculator.aws/#/estimate?id=121d54cc893c4fc91220b34547dd37af9d80cbdd
 #
 # Generate bins of test data with 10 parallel processes:
-# ```make -j 10 init_xldata```
+# ```time make -j 10 init_xldata```
 init_xldata: 0.init_xldata_bin 1.init_xldata_bin 2.init_xldata_bin 3.init_xldata_bin 4.init_xldata_bin 5.init_xldata_bin 6.init_xldata_bin 7.init_xldata_bin 8.init_xldata_bin 9.init_xldata_bin
 	@echo "🛠 completed jumbo test data creation. File count: "`find "${XL_DATA_PATH}/ -type f" | wc -l`" , total size: "`du -sh ${XL_DATA_PATH}`" 🛠"
 
@@ -168,7 +167,7 @@ create_load_test_instance:
          "KeyPair=${AWS_KEY_PAIR}" "SecurityGroup=${AWS_SECURITY_GROUP}" "InstanceProfile=${AWS_INSTANCE_PROFILE}" \
       --stack-name "filecoin-packer-test" \
       --tags "project=filecoin"
-	@echo `aws cloudformation describe-stacks --stack-name filecoin-packer-test` | jq '.Stacks[].Outputs[]|select(.OutputKey=="PublicIP").OutputValue' -r
+	@echo "instance IP:"`aws cloudformation describe-stacks --stack-name filecoin-packer-test` | jq '.Stacks[].Outputs[]|select(.OutputKey=="PublicIP").OutputValue' -r
 
 delete_load_test_instance:
 	aws cloudformation delete-stack --stack-name filecoin-packer-test
