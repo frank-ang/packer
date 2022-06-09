@@ -22,9 +22,10 @@ executors:
 
 jobs:
   tests:
-    #docker:
-    #  - image: cimg/python:3.10.4-node
     executor: my-executor
+    environment:
+      - GOPATH=$HOME/go
+      - PATH=$PATH:/usr/local/go/bin:$GOPATH/bin
     steps:
       - checkout
       - run:
@@ -47,6 +48,10 @@ jobs:
             curl "https://awscli.amazonaws.com/awscli-exe-linux-x86_64.zip" -o "awscliv2.zip"
             sudo unzip awscliv2.zip
             sudo ./aws/install
+            sudo apt install golang-go
+            go version
+            go install github.com/filecoin-project/go-fil-commp-hashhash/cmd/stream-commp@latest
+
       - run:
           name: Initialize tests, generate key pair.
           command: |

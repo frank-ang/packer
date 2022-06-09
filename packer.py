@@ -3,7 +3,7 @@ from filecoin_packer.pack import Bin, PackConfig
 from filecoin_packer.pack import bin_source_directory, pack_staging_to_car
 from filecoin_packer.pack import unpack_car_to_staging, join_large_files, decrypt_staging_files, combine_files_to_output
 from multiprocessing import Pool, TimeoutError
-from multiprocessing_logging import install_mp_handler #, uninstall_mp_handler
+from multiprocessing_logging import install_mp_handler
 from pathlib import Path
 
 
