@@ -49,6 +49,7 @@ jobs:
             echo 'export GOROOT=/usr/local/go' >> $BASH_ENV
             echo 'export GOCACHE=off' >> $BASH_ENV
             echo 'export PATH=$PATH:$GOPATH/bin:$GOROOT/bin' >> $BASH_ENV
+            source $BASH_ENV
             go version
             go env
             #go get github.com/filecoin-project/go-fil-commp-hashhash/cmd/stream-commp@latest
