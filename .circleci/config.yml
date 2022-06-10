@@ -55,7 +55,7 @@ jobs:
             go version
             go env
             # WHY go install fails??
-            go install -i github.com/filecoin-project/go-fil-commp-hashhash/cmd/stream-commp
+            go install -i github.com/filecoin-project/go-fil-commp-hashhash/cmd/stream-commp@latest
             #go install github.com/filecoin-project/go-fil-commp-hashhash/cmd/stream-commp@latest
             #which stream-commp
             #curl "https://awscli.amazonaws.com/awscli-exe-linux-x86_64.zip" -o "awscliv2.zip"
