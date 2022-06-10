@@ -41,45 +41,29 @@ jobs:
             sudo apt-get update -y
             sudo apt-get install -y rsync unzip
 
-            # sudo apt install golang-go
+            # installing golang stream-commp
             wget -c https://go.dev/dl/go1.18.3.linux-amd64.tar.gz
             sudo tar -C /usr/local/ -xzf go1.18.3.linux-amd64.tar.gz
             echo 'export GOPATH=/home/circleci/go' >> $BASH_ENV
             echo 'export GOBIN=$GOPATH/bin' >> $BASH_ENV
             echo 'export GOROOT=/usr/local/go' >> $BASH_ENV
             echo 'export PATH=$PATH:$GOPATH/bin:$GOROOT/bin' >> $BASH_ENV
-
             source $BASH_ENV
             go version
             go env
-            # WHY go install fails??
-            go install github.com/filecoin-project/go-fil-commp-hashhash/cmd/stream-commp@latest 2>&1
-            #go install github.com/filecoin-project/go-fil-commp-hashhash/cmd/stream-commp@latest
-            echo "INSTALLED STREAM COMMP!! at "`date`
+            go install github.com/filecoin-project/go-fil-commp-hashhash/cmd/stream-commp@latest
             which stream-commp
 
+            # ipfs-car
             sudo npm install -g ipfs-car
+
+            # python module deps
             pip install -r requirements.txt
 
-            #curl "https://awscli.amazonaws.com/awscli-exe-linux-x86_64.zip" -o "awscliv2.zip"
-            #sudo unzip awscliv2.zip
-            #sudo ./aws/install
-      - run:
-          name: Verify Golang and install stream-commp
-          command: |
-            set -e
-            source $BASH_ENV
-            go version
-            go env
-            #go install github.com/filecoin-project/go-fil-commp-hashhash/cmd/stream-commp@latest
-            #echo "installed stream-commp..."
-            find /home/circleci/
-            echo gobin: $GOBIN , goroot: $GOROOT
-            find $GOBIN
-            find $GOROOT
-            fubar
-            which stream-commp
-            barfu
+            # aws cli
+            curl "https://awscli.amazonaws.com/awscli-exe-linux-x86_64.zip" -o "awscliv2.zip"
+            sudo unzip awscliv2.zip
+            sudo ./aws/install
 
       - run:
           name: Initialize tests, generate key pair.
