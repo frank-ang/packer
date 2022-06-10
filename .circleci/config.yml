@@ -23,7 +23,8 @@ jobs:
   tests:
     executor: my-executor
     environment:
-      - GOPATH=/root/go
+      - HOME=/root
+      - GOPATH=$HOME/go
       - PATH=$PATH:/usr/local/go/bin:$GOPATH/bin
     steps:
       - checkout
