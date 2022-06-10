@@ -24,7 +24,7 @@ jobs:
     executor: my-executor
     environment:
     #  - HOME=/root # /home/circleci
-      - GOPATH=$HOME/go
+      - GOPATH=/home/circleci/go
       - PATH=/usr/local/go/bin:$GOPATH/bin:$PATH
     steps:
       - checkout
