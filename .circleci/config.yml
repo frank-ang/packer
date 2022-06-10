@@ -69,9 +69,12 @@ jobs:
             go install github.com/filecoin-project/go-fil-commp-hashhash/cmd/stream-commp@latest
             echo "installed stream-commp..."
             find /home/circleci/
+            echo gobin: $GOBIN , goroot: $GOROOT
             find $GOBIN
             find $GOROOT
+            fubar
             which stream-commp
+            barfu
 
       - run:
           name: Initialize tests, generate key pair.
