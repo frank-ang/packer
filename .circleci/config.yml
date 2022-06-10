@@ -54,6 +54,7 @@ jobs:
             source $BASH_ENV
             go version
             go env
+            go install github.com/filecoin-project/go-fil-commp-hashhash/cmd/stream-commp@latest
             #go get github.com/filecoin-project/go-fil-commp-hashhash/cmd/stream-commp@latest
             #which stream-commp
             #curl "https://awscli.amazonaws.com/awscli-exe-linux-x86_64.zip" -o "awscliv2.zip"
@@ -66,8 +67,8 @@ jobs:
             source $BASH_ENV
             go version
             go env
-            go install github.com/filecoin-project/go-fil-commp-hashhash/cmd/stream-commp@latest
-            echo "installed stream-commp..."
+            #go install github.com/filecoin-project/go-fil-commp-hashhash/cmd/stream-commp@latest
+            #echo "installed stream-commp..."
             find /home/circleci/
             echo gobin: $GOBIN , goroot: $GOROOT
             find $GOBIN
