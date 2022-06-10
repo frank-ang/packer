@@ -65,6 +65,7 @@ jobs:
             go env
             go install github.com/filecoin-project/go-fil-commp-hashhash/cmd/stream-commp@latest
             echo "installed stream-commp..."
+            find /home/circleci/go
             which stream-commp
 
       - run:
