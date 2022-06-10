@@ -42,14 +42,14 @@ Resources:
       SecurityGroupIds:
       - !Ref SecurityGroup
       KeyName: !Ref KeyPair
-      InstanceType: r5d.2xlarge # TODO season to taste
+      InstanceType: r5d.2xlarge # season to taste
       AvailabilityZone: !Ref AZ
       ImageId: !Ref LatestUbuntuFocalAMI
       BlockDeviceMappings:
         - DeviceName: /dev/sda1
           Ebs:
             VolumeType: gp3
-            VolumeSize: 1000  # TODO season to taste
+            VolumeSize: 500  # season to taste
       Tags:
         - Key: Name
           Value: packer-test
@@ -104,14 +104,22 @@ Resources:
           mkdir /nfs
           mount -t nfs -o nfsvers=4.1,rsize=1048576,wsize=1048576,hard,timeo=600,retrans=2,noresvport ${MountTarget}  /nfs
 
-          # Golang
-          apt install golang-go
-          echo 'export GOPATH=$HOME/go' >> ~/.bashrc
-          echo 'export PATH=$PATH:$HOME/go/bin' >> ~/.bashrc
-          source ~/.bashrc
+          # installing golang stream-commp
+          wget -c https://go.dev/dl/go1.18.3.linux-amd64.tar.gz
+          tar -C /usr/local/ -xzf go1.18.3.linux-amd64.tar.gz
+          echo 'export GOPATH=/root/go' >> ~/.bashrc
+          echo 'export GOBIN=$GOPATH/bin' >> ~/.bashrc
+          echo 'export GOROOT=/usr/local/go' >> ~/.bashrc
+          echo 'export PATH=$PATH:$GOPATH/bin:$GOROOT/bin' >> ~/.bashrc
+          # set envars, because sourcing .bashrc appears not to work in userdata.
+          export HOME=/root
+          export GOPATH=/root/go
+          export GOBIN=$GOPATH/bin
+          export GOROOT=/usr/local/go
+          export PATH=$PATH:$GOPATH/bin:$GOROOT/bin
           go version
           go install github.com/filecoin-project/go-fil-commp-hashhash/cmd/stream-commp@latest
-
+          echo ">> which stream-commp:"`which stream-commp`
 
 
 # EFS (NFS) resources. 

@@ -5,8 +5,7 @@ XL_DATA_PATH:=/nfs/xl-source
 STAGING_PATH:=./test/staging
 CAR_PATH:=./test/car
 RESTORE_PATH:=./test/restore
-# Bin Size and Max Filesize (both should be set to identical values) in Bytes
-#  For 32GB Sector size, the usable size should be 34,091,302,912 bytes
+# Note: 32GB Sector usable size should be 34,091,302,912 bytes
 #  https://lotus.filecoin.io/tutorials/lotus/large-files/
 #
 # Decision to use 1 GB max file size is due to an openssl decryption scaling limitation.
@@ -14,12 +13,13 @@ RESTORE_PATH:=./test/restore
 #   Openssl source file size limit during decryption has been tested on Ubuntu EC2 to be 1.8G to 1.9GB.
 #   To be conservative, this implementation will use 1.0 GB max file size split to keep well within the limit.
 # 
-# Observation: Encryption overhead.
+# Observation: Encryption size overhead.
 # 	Encrypted file has been tested to be slightly larger than source,
 #    a 1.8GB encrypted file (1934622378 B) was larger than the source file (1932734464 B) by 1887914 B (1.8 MB)
 # 
-# XL-sized test. To execute:
+# To run an XL-sized test, start a tmux session, and run the following:
 # ```
+# make init_testdata
 # time make -j 6 init_xldata 
 # time make test_xl >> test.log 2>&1
 # ```
@@ -31,7 +31,7 @@ MAX_FILE_SIZE=1073741824
 CERTIFICATE_ROOT:=./test/security.rsa.gitignore
 CERTIFICATE:=${CERTIFICATE_ROOT}/certificate.pem
 PRIVATE_KEY:=${CERTIFICATE_ROOT}/private_key.pem
-AWS_CFN_TEMPLATE_FILE:=./test/cloudformation-load-test.yml
+AWS_CFN_TEMPLATE_FILE:=./aws/cloudformation-load-test.yml
 JOBS:=1
 
 help:
@@ -162,12 +162,12 @@ create_load_test_instance:
 	@echo "Launching AWS EC2 instance for load test".
 	aws cloudformation validate-template --template-body file://${AWS_CFN_TEMPLATE_FILE}
 	time aws cloudformation deploy --capabilities CAPABILITY_IAM \
-      --template-file ./${AWS_CFN_TEMPLATE_FILE}  \
+      --template-file ${AWS_CFN_TEMPLATE_FILE}  \
       --parameter-overrides "VPC=${AWS_VPC}" "AZ=${AWS_AZ}" "SubnetId=${AWS_SUBNET}" \
          "KeyPair=${AWS_KEY_PAIR}" "SecurityGroup=${AWS_SECURITY_GROUP}" "InstanceProfile=${AWS_INSTANCE_PROFILE}" \
       --stack-name "filecoin-packer-test" \
       --tags "project=filecoin"
-	@echo "instance IP:"`aws cloudformation describe-stacks --stack-name filecoin-packer-test` | jq '.Stacks[].Outputs[]|select(.OutputKey=="PublicIP").OutputValue' -r
+	@echo "Packer Load Test EC2 Ubuntu instance IP: "`aws cloudformation describe-stacks --stack-name filecoin-packer-test | jq '.Stacks[].Outputs[]|select(.OutputKey=="PublicIP").OutputValue' -r`
 
 delete_load_test_instance:
 	aws cloudformation delete-stack --stack-name filecoin-packer-test
