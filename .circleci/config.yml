@@ -45,7 +45,7 @@ jobs:
             # sudo apt install golang-go
             wget -c https://go.dev/dl/go1.18.3.linux-amd64.tar.gz
             sudo tar -C /usr/local/ -xzf go1.18.3.linux-amd64.tar.gz
-            echo 'export GOPATH=$HOME/go' >> $BASH_ENV
+            echo 'export GOPATH=/home/circleci/go' >> $BASH_ENV
             echo 'export GOROOT=/usr/local/go' >> $BASH_ENV
             echo 'export GOCACHE=off' >> $BASH_ENV
             echo 'export PATH=$PATH:$GOPATH/bin:$GOROOT/bin' >> $BASH_ENV
@@ -60,9 +60,11 @@ jobs:
       - run:
           name: Verify Golang and install stream-commp
           command: |
+            source $BASH_ENV
             go version
             go env
             go install github.com/filecoin-project/go-fil-commp-hashhash/cmd/stream-commp@latest
+            echo "installed stream-commp..."
             which stream-commp
 
       - run:
