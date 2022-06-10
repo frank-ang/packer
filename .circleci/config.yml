@@ -62,12 +62,15 @@ jobs:
       - run:
           name: Verify Golang and install stream-commp
           command: |
+            set -e
             source $BASH_ENV
             go version
             go env
             go install github.com/filecoin-project/go-fil-commp-hashhash/cmd/stream-commp@latest
             echo "installed stream-commp..."
-            find /home/circleci/go
+            find /home/circleci/
+            find $GOBIN
+            find $GOROOT
             which stream-commp
 
       - run:
