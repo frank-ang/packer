@@ -47,7 +47,6 @@ jobs:
             echo 'export GOPATH=/home/circleci/go' >> $BASH_ENV
             echo 'export GOBIN=$GOPATH/bin' >> $BASH_ENV
             echo 'export GOROOT=/usr/local/go' >> $BASH_ENV
-            echo 'export GOCACHE=off' >> $BASH_ENV
             echo 'export PATH=$PATH:$GOPATH/bin:$GOROOT/bin' >> $BASH_ENV
 
             source $BASH_ENV
