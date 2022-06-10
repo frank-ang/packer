@@ -116,6 +116,7 @@ openssl req -x509 -nodes -days 36500 -newkey rsa:2048 -keyout private_key.pem -o
 # Backlog / Caveats
 
 ## Backlog Improvements:
+* Generate CommP per CAR output.
 * Output manifest of file-car mappings.
 * Toggle encryption.
 * AWS Packer AMI with CloudFormation template using IAM instance profile for EFS use-case, on-prem NFS via DX use-case, S3 use-case.

@@ -1,5 +1,6 @@
 import glob, logging, os, re, shutil
 from collections import defaultdict
+import sys
 from tokenize import Binnumber
 from filecoin_packer.crypt import encrypt, decrypt
 from math import ceil
@@ -7,15 +8,17 @@ from multiprocessing_logging import install_mp_handler
 from pickle import TRUE
 from subprocess import CalledProcessError, check_output, STDOUT
 
+
 FILE_READ_BUFFER_SIZE = 1024 * 1024
+
 
 logging.basicConfig(
     format="%(asctime)s %(levelname)-8s %(message)s",
     datefmt="%d-%b-%y %H:%M:%S",
     level=logging.DEBUG) # TODO raise to INFO default, with verbose option.
 
-class PackConfig:
 
+class PackConfig:
     bin_max_bytes = None
     file_max_bytes = None
     source_path = "."
@@ -208,12 +211,20 @@ def pack_staging_to_car(config) -> None:
     for car_directory in children:
         logging.debug("# packing car from staging bin: {}".format(car_directory.path))
         path_to_files = car_directory.path + "/"
-        ipfs_car_cmd = "ipfs-car --wrapWithDirectory false --pack {} --output {}.car".format(path_to_files,
-            os.path.join(output_dir_path,os.path.basename(car_directory.path)))
+        car_file_path = os.path.join(output_dir_path,os.path.basename(car_directory.path)) + ".car"
+        ipfs_car_cmd = "ipfs-car --wrapWithDirectory false --pack {} --output {}".format(path_to_files, car_file_path)
         logging.debug("# CAR executing: {}".format(ipfs_car_cmd))
         try:
-            cmd_out = check_output(ipfs_car_cmd, stderr=STDOUT, shell=True)
-            logging.debug("# CAR completed, output: {}".format(cmd_out))
+            ipfs_car_cmd_out = check_output(ipfs_car_cmd, stderr=STDOUT, shell=True)
+            logging.debug("# CAR completed, output: {}".format(ipfs_car_cmd_out))
+            commp_cmd = "cat {} | stream-commp".format(car_file_path)
+            logging.debug("# computing commP: {}".format(commp_cmd))
+            commp_cmd_out = check_output(commp_cmd, stderr=STDOUT, shell=True).strip().decode(sys.stdout.encoding) # "utf-8" probably
+            pattern = re.compile("^CommPCid: (\w+).*$", re.MULTILINE)
+            commpcid = pattern.match(commp_cmd_out).groups()
+            assert len(commpcid) > 0
+            logging.debug("# CAR File: {}; CommPCid: {}".format(car_file_path, commpcid))
+            logging.debug("# CAR File: {}; dumping stream-commp output: {}".format(car_file_path, commp_cmd_out))
         except CalledProcessError as e:
             raise Exception(e.output) from e
 

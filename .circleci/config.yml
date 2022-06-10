@@ -15,15 +15,12 @@ executors:
   my-executor:
     docker:
       - image: cimg/python:3.10.4-node
-    ## larger resource, because decryption is memory-intensive. 
-    ## 2xlarge: 2 vCPU, 40GB RAM https://circleci.com/docs/2.0/configuration-reference/#docker
-    ## Appears to be a CircleCI paid feature.
-    resource_class: 2xlarge+
+    ## 2xlarge resource not available on CircleCI free plan.
+    ## https://circleci.com/docs/2.0/configuration-reference/#docker
+    # resource_class: 2xlarge+ # not available on free plan.
 
 jobs:
   tests:
-    #docker:
-    #  - image: cimg/python:3.10.4-node
     executor: my-executor
     steps:
       - checkout
@@ -39,14 +36,35 @@ jobs:
       - run:
           name: Install dependencies 
           command: |
+            set -e
             echo "## Installing Dependencies..."
             sudo apt-get update -y
             sudo apt-get install -y rsync unzip
+
+            # installing golang stream-commp
+            wget -c https://go.dev/dl/go1.18.3.linux-amd64.tar.gz
+            sudo tar -C /usr/local/ -xzf go1.18.3.linux-amd64.tar.gz
+            echo 'export GOPATH=/home/circleci/go' >> $BASH_ENV
+            echo 'export GOBIN=$GOPATH/bin' >> $BASH_ENV
+            echo 'export GOROOT=/usr/local/go' >> $BASH_ENV
+            echo 'export PATH=$PATH:$GOPATH/bin:$GOROOT/bin' >> $BASH_ENV
+            source $BASH_ENV
+            go version
+            go env
+            go install github.com/filecoin-project/go-fil-commp-hashhash/cmd/stream-commp@latest
+            which stream-commp
+
+            # ipfs-car
             sudo npm install -g ipfs-car
+
+            # python module deps
             pip install -r requirements.txt
+
+            # aws cli
             curl "https://awscli.amazonaws.com/awscli-exe-linux-x86_64.zip" -o "awscliv2.zip"
             sudo unzip awscliv2.zip
             sudo ./aws/install
+
       - run:
           name: Initialize tests, generate key pair.
           command: |
@@ -54,12 +72,14 @@ jobs:
       - run:
           name: Test small and medium data
           command: |
+            set -e
             echo "## Running regular tests..."
             make test_all
             python -m pytest test/test_packer.py -o log_cli=true -o log_cli_level=INFO --junitxml=reports/test-report.xml
       - run:
           name: Test large data
           command: |
+            set -e
             echo "## Running large test..."
             make init_largedata
             make test_large
