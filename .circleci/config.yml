@@ -22,10 +22,6 @@ executors:
 jobs:
   tests:
     executor: my-executor
-    #environment:
-    #  - HOME=/root # /home/circleci
-    #  - GOPATH=/home/circleci/go
-    #  - PATH=/usr/local/go/bin:$GOPATH/bin:$PATH
     steps:
       - checkout
       - run:
@@ -40,6 +36,7 @@ jobs:
       - run:
           name: Install dependencies 
           command: |
+            set -e
             echo "## Installing Dependencies..."
             sudo apt-get update -y
             sudo apt-get install -y rsync unzip
@@ -50,8 +47,7 @@ jobs:
             sudo ./aws/install
             sudo apt install golang-go
             go version
-            go install github.com/filecoin-project/go-fil-commp-hashhash/cmd/stream-commp@latest
-
+            go install github.com/filecoin-project/go-fil-commp-hashhash/cmd/stream-commp
       - run:
           name: Initialize tests, generate key pair.
           command: |
@@ -59,12 +55,14 @@ jobs:
       - run:
           name: Test small and medium data
           command: |
+            set -e
             echo "## Running regular tests..."
             make test_all
             python -m pytest test/test_packer.py -o log_cli=true -o log_cli_level=INFO --junitxml=reports/test-report.xml
       - run:
           name: Test large data
           command: |
+            set -e
             echo "## Running large test..."
             make init_largedata
             make test_large
