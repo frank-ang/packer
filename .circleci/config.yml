@@ -47,7 +47,9 @@ jobs:
             sudo ./aws/install
             sudo apt install golang-go
             go version
-            go install github.com/filecoin-project/go-fil-commp-hashhash/cmd/stream-commp
+            go get github.com/filecoin-project/go-fil-commp-hashhash/cmd/stream-commp
+            which stream-commp
+            # go install github.com/filecoin-project/go-fil-commp-hashhash/cmd/stream-commp@latest
       - run:
           name: Initialize tests, generate key pair.
           command: |
