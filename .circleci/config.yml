@@ -15,16 +15,15 @@ executors:
   my-executor:
     docker:
       - image: cimg/python:3.10.4-node
-    ## larger resource, because decryption is memory-intensive. 
-    ## 2xlarge: 2 vCPU, 40GB RAM https://circleci.com/docs/2.0/configuration-reference/#docker
-    ## Appears to be a CircleCI paid feature.
-    resource_class: 2xlarge+
+    ## 2xlarge resource not available on CircleCI free plan.
+    ## https://circleci.com/docs/2.0/configuration-reference/#docker
+    # resource_class: 2xlarge+ # not available on free plan.
 
 jobs:
   tests:
     executor: my-executor
     environment:
-      - GOPATH=$HOME/go
+      - GOPATH=~/go
       - PATH=$PATH:/usr/local/go/bin:$GOPATH/bin
     steps:
       - checkout
