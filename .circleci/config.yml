@@ -22,10 +22,10 @@ executors:
 jobs:
   tests:
     executor: my-executor
-    environment:
-      - HOME=/root
-      - GOPATH=$HOME/go
-      - PATH=$PATH:/usr/local/go/bin:$GOPATH/bin
+    #environment:
+    #  - HOME=/root
+    #  - GOPATH=$HOME/go
+    #  - PATH=$PATH:/usr/local/go/bin:$GOPATH/bin
     steps:
       - checkout
       - run:
@@ -48,9 +48,9 @@ jobs:
             curl "https://awscli.amazonaws.com/awscli-exe-linux-x86_64.zip" -o "awscliv2.zip"
             sudo unzip awscliv2.zip
             sudo ./aws/install
-            sudo apt install golang-go
-            go version
-            go install github.com/filecoin-project/go-fil-commp-hashhash/cmd/stream-commp@latest
+            #sudo apt install golang-go
+            #go version
+            #go install github.com/filecoin-project/go-fil-commp-hashhash/cmd/stream-commp@latest
 
       - run:
           name: Initialize tests, generate key pair.
