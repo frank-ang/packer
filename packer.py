@@ -87,8 +87,9 @@ def main() -> None:
         job_index += 1
     logging.debug("## all jobs launched.")
     pool.close()
+    logging.debug("## Multiprocessing Pool closed. Joining worker processes...")
     pool.join()
-    logging.debug("## all jobs completed.")
+    logging.debug("## all worker processes completed.")
     # Exit.
 
 
@@ -104,7 +105,7 @@ def execute(config, paths_list) -> None:
 
 def pack(config, paths_list) -> None:
     # Pack up the source directory for transport into Filecoin via CAR format.
-    logging.debug("## Packing Source: {} ; Paths List: {}".format(config.source_path, paths_list))
+    logging.debug("## job_id: {}; Packing Source: {} ; Paths List: {}".format(config.job_id, config.source_path, paths_list))
 
     try:
 
@@ -125,10 +126,12 @@ def pack(config, paths_list) -> None:
     except Exception as e:
         logging.error(e)
         raise
-
+    logging.debug("## job_id: {}. Pack Completed.".format(config.job_id))
 
 def unpack(config, paths_list) -> None:
     # Pack up the paths_list directories of CAR files into the output, with extraction and reassembly.
+    logging.debug("## job_id: {}; Unpacking...")
+
     try:
         # 1. Unpack the CAR files to binned staging directories.
         logging.debug("#>>> unpack_car_to_staging(). paths_list:{}".format(paths_list))
@@ -151,6 +154,7 @@ def unpack(config, paths_list) -> None:
     except Exception as e:
         logging.error(e)
         raise
+    logging.debug("## job_id: {}; Unpack Completed.".format(config.job_id))
 
 
 if __name__ == "__main__":

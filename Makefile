@@ -31,7 +31,8 @@ MAX_FILE_SIZE=1073741824
 CERTIFICATE_ROOT:=./test/security.rsa.gitignore
 CERTIFICATE:=${CERTIFICATE_ROOT}/certificate.pem
 PRIVATE_KEY:=${CERTIFICATE_ROOT}/private_key.pem
-AWS_CFN_TEMPLATE_FILE:=./aws/cloudformation-load-test.yml
+AWS_LOAD_TEST_TEMPLATE:=./aws/cloudformation-load-test.yml
+AWS_APPLIANCE_TEMPLATE:=./aws/cloudformation-appliance.yml
 JOBS:=1
 
 help:
@@ -160,21 +161,43 @@ init_xldata: 0.init_xldata_bin 1.init_xldata_bin 2.init_xldata_bin 3.init_xldata
 
 create_load_test_instance:
 	@echo "Launching AWS EC2 instance for load test".
-	aws cloudformation validate-template --template-body file://${AWS_CFN_TEMPLATE_FILE}
+	aws cloudformation validate-template --template-body file://${AWS_LOAD_TEST_TEMPLATE}
 	time aws cloudformation deploy --capabilities CAPABILITY_IAM \
-      --template-file ${AWS_CFN_TEMPLATE_FILE}  \
+      --template-file ${AWS_LOAD_TEST_TEMPLATE}  \
       --parameter-overrides "VPC=${AWS_VPC}" "AZ=${AWS_AZ}" "SubnetId=${AWS_SUBNET}" \
          "KeyPair=${AWS_KEY_PAIR}" "SecurityGroup=${AWS_SECURITY_GROUP}" "InstanceProfile=${AWS_INSTANCE_PROFILE}" \
-      --stack-name "filecoin-packer-test" \
+      --stack-name "filecoin-packer-load-test" \
       --tags "project=filecoin"
-	@echo "Packer Load Test EC2 Ubuntu instance IP: "`aws cloudformation describe-stacks --stack-name filecoin-packer-test | jq '.Stacks[].Outputs[]|select(.OutputKey=="PublicIP").OutputValue' -r`
+	@echo "Packer Load Test EC2 Ubuntu instance IP: "`aws cloudformation describe-stacks --stack-name filecoin-packer-load-test | jq '.Stacks[].Outputs[]|select(.OutputKey=="PublicIP").OutputValue' -r`
 
 delete_load_test_instance:
-	aws cloudformation delete-stack --stack-name filecoin-packer-test
+	aws cloudformation delete-stack --stack-name filecoin-packer-load-test
 
 
-wait_stack_deleted:
-	aws cloudformation wait stack-delete-complete --stack-name filecoin-packer-test
+wait_delete_load_test_stack:
+	aws cloudformation wait stack-delete-complete --stack-name filecoin-packer-load-test
 
 
-recreate_load_test_instance: delete_load_test_instance wait_stack_deleted create_load_test_instance
+recreate_load_test_instance: delete_load_test_instance wait_delete_load_test_stack create_load_test_instance
+
+
+create_appliance:
+	@echo "Creating packer appliance AWS stack..."
+	aws cloudformation validate-template --template-body file://${AWS_APPLIANCE_TEMPLATE}
+	time aws cloudformation deploy --capabilities CAPABILITY_IAM \
+      --template-file ${AWS_APPLIANCE_TEMPLATE}  \
+      --parameter-overrides "VPC=${AWS_VPC}" "AZ=${AWS_AZ}" "SubnetId=${AWS_SUBNET}" \
+         "KeyPair=${AWS_KEY_PAIR}" "SecurityGroup=${AWS_SECURITY_GROUP}" "InstanceProfile=${AWS_INSTANCE_PROFILE}" \
+      --stack-name "filecoin-packer-appliance-test" \
+      --tags "project=filecoin"
+	@echo "Packer Load Test EC2 Ubuntu instance IP: "`aws cloudformation describe-stacks --stack-name filecoin-packer-appliance-test | jq '.Stacks[].Outputs[]|select(.OutputKey=="PublicIP").OutputValue' -r`
+
+delete_appliance:
+	@echo "Deleting packer appliance AWS stack..."
+	aws cloudformation delete-stack --stack-name filecoin-packer-appliance-test
+
+recreate_appliance: delete_appliance wait_delete_load_test_stack create_appliance
+	@echo "Recreated packer appliance AWS stack..."
+
+wait_delete_load_test_stack:
+	aws cloudformation wait stack-delete-complete --stack-name filecoin-packer-appliance-test
