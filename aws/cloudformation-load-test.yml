@@ -49,7 +49,7 @@ Resources:
         - DeviceName: /dev/sda1
           Ebs:
             VolumeType: gp3
-            VolumeSize: 500  # season to taste
+            VolumeSize: 100  # season to taste
       Tags:
         - Key: Name
           Value: packer-test

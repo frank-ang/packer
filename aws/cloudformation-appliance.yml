@@ -74,11 +74,13 @@ Parameters:
     Description: Ubuntu AMI
     Type: AWS::SSM::Parameter::Value<AWS::EC2::Image::Id>
     Default: /aws/service/canonical/ubuntu/server/focal/stable/current/amd64/hvm/ebs-gp2/ami-id
+    ##Type: String
+    ##Default: ami-059fcf742de12af88
 
   InstanceType:
     Description: EC2 Instance Type
     Type: String
-    Default: r5d.2xlarge
+    Default: r5d.xlarge
     AllowedValues:
       - r5d.large
       - r5d.xlarge
@@ -155,7 +157,6 @@ Resources:
           rm /usr/bin/python3 # remove symlink to preinstalled python3.8
           ln -sf /usr/bin/python3.10 /usr/bin/python3
           ln -sf /usr/bin/python3 /usr/bin/python
-
           apt install -y python3.10-distutils
           apt install -y python3-apt
           ## Fixes: https://stackoverflow.com/questions/13708180/python-dev-installation-error-importerror-no-module-named-apt-pkg

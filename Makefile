@@ -196,8 +196,8 @@ delete_appliance:
 	@echo "Deleting packer appliance AWS stack..."
 	aws cloudformation delete-stack --stack-name filecoin-packer-appliance-test
 
-recreate_appliance: delete_appliance wait_delete_load_test_stack create_appliance
+recreate_appliance: delete_appliance wait_delete_appliance create_appliance
 	@echo "Recreated packer appliance AWS stack..."
 
-wait_delete_load_test_stack:
+wait_delete_appliance:
 	aws cloudformation wait stack-delete-complete --stack-name filecoin-packer-appliance-test

@@ -87,9 +87,9 @@ def main() -> None:
         job_index += 1
     logging.debug("## all jobs launched.")
     pool.close()
-    logging.debug("## Multiprocessing Pool closed. Joining worker processes...")
     pool.join()
     logging.debug("## all worker processes completed.")
+    logging.shutdown()
     # Exit.
 
 
@@ -100,7 +100,7 @@ def execute(config, paths_list) -> None:
         pack(config, paths_list)
     elif config.mode == config.MODE_UNPACK:
         logging.debug("#### unpacking: {}".format(paths_list))
-        unpack(config, paths_list) # , final_output_path)
+        unpack(config, paths_list)
 
 
 def pack(config, paths_list) -> None:
@@ -108,7 +108,6 @@ def pack(config, paths_list) -> None:
     logging.debug("## job_id: {}; Packing Source: {} ; Paths List: {}".format(config.job_id, config.source_path, paths_list))
 
     try:
-
         # 1. Pack the source directory into binned staging directories. Split large files. Encrypt files.
         bin_list = [Bin(0)]
 
