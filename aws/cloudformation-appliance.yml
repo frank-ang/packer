@@ -232,12 +232,13 @@ Resources:
 
           # Save Packer job config file.
           export PACKER_CONFIG_FILE=~/packer/packer.conf
-          echo "Packer configuration:" >> $PACKER_CONFIG_FILE
-          echo "  PackMode: ${PackMode}" >>  $PACKER_CONFIG_FILE
-          echo "  DataSource: ${DataSource}" >> $PACKER_CONFIG_FILE
-          echo "  DataTarget: ${DataTarget}" >> $PACKER_CONFIG_FILE
-          echo "  EncryptionKey: ${EncryptionKey}" >> $PACKER_CONFIG_FILE
-
+          rm -f $PACKER_CONFIG_FILE
+          echo "PACK_MODE=${PackMode}" >> $PACKER_CONFIG_FILE
+          echo "DATA_SOURCE=${DataSource}" >> $PACKER_CONFIG_FILE
+          echo "DATA_TARGET=${DataTarget}" >> $PACKER_CONFIG_FILE
+          echo "ENCRYPTION_KEY=${EncryptionKey}" >> $PACKER_CONFIG_FILE
+          echo "STAGING_PATH=/local/staging" >> $PACKER_CONFIG_FILE
+          echo "JOBS=1" >> $PACKER_CONFIG_FILE
           # TODO Install web server and web app.
 
           # mount NFS.
@@ -254,6 +255,9 @@ Resources:
           echo "## Signaling successful to CloudFormation."
           /opt/aws/bin/cfn-signal --success true --stack ${AWS::StackName} --resource PackerInstance --region ${AWS::Region}
           echo "EC2 instance inititalization COMPLETE"
+
+          # Launch the script or set a cron?
+          make run_packer_job
 
     CreationPolicy:
       ResourceSignal:

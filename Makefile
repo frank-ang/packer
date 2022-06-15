@@ -25,7 +25,6 @@ RESTORE_PATH:=./test/restore
 # ```
 # INSTRUCTIONS: Create the following config file, based on template file: config.mk
 -include config.mk.gitignore
--include packer.conf
 
 BIN_SIZE:=32000000000
 MAX_FILE_SIZE=1073741824
@@ -37,8 +36,10 @@ AWS_APPLIANCE_TEMPLATE:=./aws/cloudformation-appliance.yml
 JOBS:=1
 
 run_packer_job:
-	@ echo "# run_packer_job..."
-	@ echo "PACK_MODE=${PACK_MODE}"
+	@echo "📦📦📦📦 Running Packer Job script ... 📦📦📦📦"
+	./packer_job.sh
+	@echo "📦📦📦📦 Completed Packer Job script ... 📦📦📦📦"
+# TODO 
 
 help:
 	echo "Packer makefile"
