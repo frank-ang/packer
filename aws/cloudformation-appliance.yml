@@ -25,6 +25,7 @@ Metadata:
         Label: 
           default: "Packer configurtion"
         Parameters:
+          - PackMode
           - DataSource
           - DataTarget
           - EncryptionKey
@@ -113,6 +114,15 @@ Parameters:
     Default: EncryptionKeyDUMMY
     # Hardcoded
 
+  PackMode:
+    Description: Pack/Unpack mode.
+    Type: String
+    Default: PACK
+    AllowedValues:
+      - PACK
+      - UNPACK
+
+
 Resources:
 
   PackerInstance:
@@ -142,18 +152,28 @@ Resources:
 
           function my_trap() {
             echo "UserData was unsuccessful!"
-            # use this function to implement the notification/shutdown behavior
-            # notify cloudformation?, publish cloudwatch error?, post userdata log to cloudwatch?
-            echo "Sorry, there was an error while executing User Data. Scheduling shutdown..." && shutdown -h +60
+            echo "ERROR while executing User Data. "
+            echo "Scheduling shutdown..." && shutdown -h +60
+            echo "Sending CloudFormation error signal"
+            ln -sf /usr/bin/python3.8 /usr/bin/python3 # revert to default python for cloudformation
+            /opt/aws/bin/cfn-signal -e 1 --stack ${AWS::StackName} --resource PackerInstance --region ${AWS::Region}
           }
           trap 'my_trap' ERR
 
           echo "## Installing Dependencies..."
+          cd /root
           apt update
-          apt install git openssl rsync make jq unzip -y
-          apt install software-properties-common -y
+          apt install -y git openssl rsync make jq unzip
+          apt install -y software-properties-common
+
+          # Cloudformation helper scripts on default python 3.8
+          wget --no-verbose -O /tmp/aws-cfn-bootstrap-py3-latest.tar.gz https://s3.amazonaws.com/cloudformation-examples/aws-cfn-bootstrap-py3-latest.tar.gz
+          python3 -m easy_install --script-dir /opt/aws/bin /tmp/aws-cfn-bootstrap-py3-latest.tar.gz
+          # Alt way to install? But need Pip?? # pip install https://s3.amazonaws.com/cloudformation-examples/aws-cfn-bootstrap-latest.tar.gz
+
+          # Python 3.10
           add-apt-repository ppa:deadsnakes/ppa -y
-          apt install python3.10 -y
+          apt install -y python3.10
           rm /usr/bin/python3 # remove symlink to preinstalled python3.8
           ln -sf /usr/bin/python3.10 /usr/bin/python3
           ln -sf /usr/bin/python3 /usr/bin/python
@@ -164,31 +184,19 @@ Resources:
           ln -s apt_pkg.cpython-38-x86_64-linux-gnu.so apt_pkg.so
           curl https://bootstrap.pypa.io/get-pip.py | python3
 
-          cd /root
-          git clone https://github.com/frank-ang/packer.git
-          cd /root/packer
-          git fetch
-          git switch test  # testing on "test" branchname
-          pip install -r requirements.txt
-
+          # Node 16
           curl -sL https://deb.nodesource.com/setup_16.x | sudo bash -
           sudo apt -y install nodejs
           npm install -g ipfs-car
           apt install -y sysstat iotop
 
-          # AWS CLI
+          # AWS CLI v2
           curl "https://awscli.amazonaws.com/awscli-exe-linux-x86_64.zip" -o "awscliv2.zip"
-          unzip awscliv2.zip
+          unzip -q awscliv2.zip
           ./aws/install
 
-          # Mount NVMe (SSD) instance store volume (Only for EC2 instance types that support it)
-          mkfs -t xfs /dev/nvme1n1
-          apt install -y xfsprogs
-          mkdir /local
-          mount /dev/nvme1n1 /local
-
-          # installing golang stream-commp
-          wget -c https://go.dev/dl/go1.18.3.linux-amd64.tar.gz
+          # Golang 1.18 and stream-commp
+          wget --no-verbose -c https://go.dev/dl/go1.18.3.linux-amd64.tar.gz
           tar -C /usr/local/ -xzf go1.18.3.linux-amd64.tar.gz
           echo 'export GOPATH=/root/go' >> ~/.bashrc
           echo 'export GOBIN=$GOPATH/bin' >> ~/.bashrc
@@ -204,14 +212,53 @@ Resources:
           go install github.com/filecoin-project/go-fil-commp-hashhash/cmd/stream-commp@latest
           echo "## which stream-commp:"`which stream-commp`
 
+          # Mount NVMe (SSD) instance store volume (Only for EC2 instance types that support it)
+          mkfs -t xfs /dev/nvme1n1
+          apt install -y xfsprogs
+          mkdir /local
+          mount /dev/nvme1n1 /local
+
+          # Repo
+          cd /root
+          git clone https://github.com/frank-ang/packer.git
+          cd /root/packer
+          git fetch
+          git switch test  # testing on "test" branchname
+          pip install -r requirements.txt
+
+          # CLI Smoke test.
           echo "## Packer CLI installed. Now running CLI smoke test."
-          make init_testdata && make test
+          make init_testdata && make test && make clean
+
+          # Save Packer job config file.
+          export PACKER_CONFIG_FILE=~/packer/packer.conf
+          echo "Packer configuration:" >> $PACKER_CONFIG_FILE
+          echo "  PackMode: ${PackMode}" >>  $PACKER_CONFIG_FILE
+          echo "  DataSource: ${DataSource}" >> $PACKER_CONFIG_FILE
+          echo "  DataTarget: ${DataTarget}" >> $PACKER_CONFIG_FILE
+          echo "  EncryptionKey: ${EncryptionKey}" >> $PACKER_CONFIG_FILE
 
           # TODO Install web server and web app.
 
           # mount NFS.
           mkdir /nfs
           # TODO re-enable # mount -t nfs -o nfsvers=4.1,rsize=1048576,wsize=1048576,hard,timeo=600,retrans=2,noresvport $_{_MountTarget_}  /nfs
+
+          # revert to default python for cloudformation
+          ln -sf /usr/bin/python3.8 /usr/bin/python3
+
+          # Install the files and packages from the metadata (not using this actually.)
+          # /opt/aws/bin/cfn-init -v --stack ${AWS::StackName} --resource PackerInstance --region ${AWS::Region}
+
+          # All done, signal success.
+          echo "## Signaling successful to CloudFormation."
+          /opt/aws/bin/cfn-signal --success true --stack ${AWS::StackName} --resource PackerInstance --region ${AWS::Region}
+          echo "EC2 instance inititalization COMPLETE"
+
+    CreationPolicy:
+      ResourceSignal:
+        Timeout: PT10M
+
 # TODO re-enable # mount -t nfs -o nfsvers=4.1,rsize=1048576,wsize=1048576,hard,timeo=600,retrans=2,noresvport $ REMOVE SPACES { MountTarget }  /nfs
 
 #  FileSystem:

@@ -25,6 +25,7 @@ RESTORE_PATH:=./test/restore
 # ```
 # INSTRUCTIONS: Create the following config file, based on template file: config.mk
 -include config.mk.gitignore
+-include packer.conf
 
 BIN_SIZE:=32000000000
 MAX_FILE_SIZE=1073741824
@@ -34,6 +35,10 @@ PRIVATE_KEY:=${CERTIFICATE_ROOT}/private_key.pem
 AWS_LOAD_TEST_TEMPLATE:=./aws/cloudformation-load-test.yml
 AWS_APPLIANCE_TEMPLATE:=./aws/cloudformation-appliance.yml
 JOBS:=1
+
+run_packer_job:
+	@ echo "# run_packer_job..."
+	@ echo "PACK_MODE=${PACK_MODE}"
 
 help:
 	echo "Packer makefile"
@@ -159,6 +164,7 @@ init_xldata: 0.init_xldata_bin 1.init_xldata_bin 2.init_xldata_bin 3.init_xldata
 	./test/gen-large-test-data.sh -c 1 -s $$(( 1024 * 1024 * 1024 * 9 )) -p dummy-9GiB -d "${XL_DATA_PATH}/$*/9GiB"
 
 
+# AWS resources.
 create_load_test_instance:
 	@echo "Launching AWS EC2 instance for load test".
 	aws cloudformation validate-template --template-body file://${AWS_LOAD_TEST_TEMPLATE}
@@ -173,13 +179,10 @@ create_load_test_instance:
 delete_load_test_instance:
 	aws cloudformation delete-stack --stack-name filecoin-packer-load-test
 
-
 wait_delete_load_test_stack:
 	aws cloudformation wait stack-delete-complete --stack-name filecoin-packer-load-test
 
-
 recreate_load_test_instance: delete_load_test_instance wait_delete_load_test_stack create_load_test_instance
-
 
 create_appliance:
 	@echo "Creating packer appliance AWS stack..."
