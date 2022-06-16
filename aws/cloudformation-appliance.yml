@@ -175,7 +175,7 @@ Resources:
           add-apt-repository ppa:deadsnakes/ppa -y
           apt install -y python3.10
           rm /usr/bin/python3 # remove symlink to preinstalled python3.8
-          ln -sf /usr/bin/python3.10 /usr/bin/python3
+          ln -sf /usr/bin/python3.10 /usr/bin/python3 # set default python3.10
           ln -sf /usr/bin/python3 /usr/bin/python
           apt install -y python3.10-distutils
           apt install -y python3-apt
@@ -245,7 +245,7 @@ Resources:
           mkdir /nfs
           # TODO re-enable # mount -t nfs -o nfsvers=4.1,rsize=1048576,wsize=1048576,hard,timeo=600,retrans=2,noresvport $_{_MountTarget_}  /nfs
 
-          # revert to default python for cloudformation
+          # Python 3.8 as default for cloudformation signal
           ln -sf /usr/bin/python3.8 /usr/bin/python3
 
           # Install the files and packages from the metadata (not using this actually.)
@@ -255,6 +255,9 @@ Resources:
           echo "## Signaling successful to CloudFormation."
           /opt/aws/bin/cfn-signal --success true --stack ${AWS::StackName} --resource PackerInstance --region ${AWS::Region}
           echo "EC2 instance inititalization COMPLETE"
+          
+          # Python 3.10 as default again for Packer.
+          ln -sf /usr/bin/python3.10 /usr/bin/python3
 
           # Launch the script or set a cron?
           make run_packer_job
