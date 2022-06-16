@@ -88,7 +88,8 @@ def main() -> None:
     logging.debug("## all jobs launched.")
     pool.close()
     pool.join()
-    logging.debug("## all jobs completed.")
+    logging.debug("## all worker processes completed.")
+    logging.shutdown()
     # Exit.
 
 
@@ -99,15 +100,14 @@ def execute(config, paths_list) -> None:
         pack(config, paths_list)
     elif config.mode == config.MODE_UNPACK:
         logging.debug("#### unpacking: {}".format(paths_list))
-        unpack(config, paths_list) # , final_output_path)
+        unpack(config, paths_list)
 
 
 def pack(config, paths_list) -> None:
     # Pack up the source directory for transport into Filecoin via CAR format.
-    logging.debug("## Packing Source: {} ; Paths List: {}".format(config.source_path, paths_list))
+    logging.debug("## job_id: {}; Packing Source: {} ; Paths List: {}".format(config.job_id, config.source_path, paths_list))
 
     try:
-
         # 1. Pack the source directory into binned staging directories. Split large files. Encrypt files.
         bin_list = [Bin(0)]
 
@@ -125,10 +125,12 @@ def pack(config, paths_list) -> None:
     except Exception as e:
         logging.error(e)
         raise
-
+    logging.debug("## job_id: {}. Pack Completed.".format(config.job_id))
 
 def unpack(config, paths_list) -> None:
     # Pack up the paths_list directories of CAR files into the output, with extraction and reassembly.
+    logging.debug("## job_id: {}; Unpacking...")
+
     try:
         # 1. Unpack the CAR files to binned staging directories.
         logging.debug("#>>> unpack_car_to_staging(). paths_list:{}".format(paths_list))
@@ -151,6 +153,7 @@ def unpack(config, paths_list) -> None:
     except Exception as e:
         logging.error(e)
         raise
+    logging.debug("## job_id: {}; Unpack Completed.".format(config.job_id))
 
 
 if __name__ == "__main__":

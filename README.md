@@ -70,28 +70,22 @@ options:
 ## Prerequisites
 
 Dependencies.
-* Linux OS (tested on Ubuntu and MacOS)
+* Linux OS (tested on Ubuntu 20 and MacOS)
 * Python 3.10+, pip
 * NodeJS 16.+
 * ipfs-car
 * rsync
 * openssl
 
-
-On Ubuntu / Debian-type Linux:
-```bash
-sudo apt-get update -y
-sudo apt-get install -y rsync
-sudo npm install -g ipfs-car
-pip install -r requirements.txt
-```
-Refer to Cloudformation yaml for detailed install commands.
-
+Refer to Cloudformation yaml file for Ubuntu install commands.
 
 ## Install.
 
 Clone this repo.
-
+```
+make init_testdata
+make test
+```
 
 # Encryption Keys
 
@@ -130,7 +124,7 @@ See [issues](https://github.com/frank-ang/packer/issues).
 
 ## CAVEATS & NOT SUPPORTED:
 
-* Path names are transparently stored in CAR files. Individual files are encrypted, but filesystem path names are stored in clear. User is responsible for ensuring source filesystem pathnames are hidden (e.g. preprocess all data into TAR files), obfuscated, or otherwise does not contain privacy information.
+* Path names are transparently stored in CAR files in clear, although individual files are encrypted. User is responsible for ensuring source filesystem pathnames are hidden (e.g. preprocess all data into TAR files), obfuscated, or otherwise does not contain privacy information.
 * POSIX metadata (e.g. mtime) are discarded since CAR files do not preserve file metadata. Workaround is for the user to preprocess all data into TAR files (same workaround as for path name privacy)
 
 

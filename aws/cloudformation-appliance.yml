@@ -1,0 +1,298 @@
+AWSTemplateFormatVersion: '2010-09-09'
+
+Description: Packer EC2 Appliance.
+
+Metadata: 
+  AWS::CloudFormation::Interface: 
+    ParameterGroups: 
+      - 
+        Label: 
+          default: "Network Configuration"
+        Parameters: 
+          - VPC
+          - AZ
+          - SubnetId
+          - SecurityGroup
+      - 
+        Label: 
+          default: "Amazon EC2 Configuration"
+        Parameters: 
+          - InstanceType
+          - InstanceProfile
+          - KeyPair
+          - LatestUbuntuFocalAMI
+      - 
+        Label: 
+          default: "Packer configurtion"
+        Parameters:
+          - PackMode
+          - DataSource
+          - DataTarget
+          - EncryptionKey
+    ParameterLabels: 
+      VPC: 
+        default: "Which VPC ID should packer be deployed to?"
+
+Parameters: 
+
+  VPC:
+    Description: VPC ID.
+    Type: AWS::EC2::VPC::Id
+    Default: vpc-0b66bf645342935b5
+    # Hardcoded
+
+  AZ:
+    Description: Availability Zone placement
+    Type: AWS::EC2::AvailabilityZone::Name
+    Default: ap-southeast-1a
+    # Hardcoded
+
+  SubnetId:
+    Description: Subnet ID placement
+    Type: AWS::EC2::Subnet::Id
+    Default: subnet-0728cf0c3c454fff1
+    # Hardcoded
+
+  SecurityGroup:
+    Type: AWS::EC2::SecurityGroup::Id
+    Description: Security group ID
+    Default: sg-06788998bef10dbb7
+    # Hardcoded
+
+  KeyPair:
+    Description: Key Pair Name
+    Type: AWS::EC2::KeyPair::KeyName
+    Default: mac2021
+    # Hardcoded
+
+  InstanceProfile:
+    Description: EC2 Instance Profile ARN (TODO remove hardcoding)
+    Type: String
+    Default: mySSMManagedInstance
+    # Hardcoded
+
+  LatestUbuntuFocalAMI:
+    Description: Ubuntu AMI
+    Type: AWS::SSM::Parameter::Value<AWS::EC2::Image::Id>
+    Default: /aws/service/canonical/ubuntu/server/focal/stable/current/amd64/hvm/ebs-gp2/ami-id
+    ##Type: String
+    ##Default: ami-059fcf742de12af88
+
+  InstanceType:
+    Description: EC2 Instance Type
+    Type: String
+    Default: r5d.xlarge
+    AllowedValues:
+      - r5d.large
+      - r5d.xlarge
+      - r5d.2xlarge
+      - r5d.4xlarge
+      - m5d.large
+      - m5d.xlarge
+      - m5d.2xlarge
+      - m5d.4xlarge
+      - c5d.large
+      - c5d.xlarge
+      - c5d.2xlarge
+      - c5d.4xlarge
+
+  DataSource:
+    Description: Source path of input filesystem. ( TODO, S3 bucket/path ) # TODO: automate mounting NFS; Configure S3 client.
+    Type: String
+    Default: /DataSourceDUMMY
+    # Hardcoded
+
+  DataTarget:
+    Description: Target path for output packaged CAR files.
+    Type: String
+    Default: /DataTargetDUMMY
+    # Hardcoded
+
+  EncryptionKey:
+    Description: TODO IMPLEMENT Automation for Packer Encryption Key / Algo / Toggle
+    Type: String
+    Default: EncryptionKeyDUMMY
+    # Hardcoded
+
+  PackMode:
+    Description: Pack/Unpack mode.
+    Type: String
+    Default: PACK
+    AllowedValues:
+      - PACK
+      - UNPACK
+
+
+Resources:
+
+  PackerInstance:
+    Type: AWS::EC2::Instance
+    Properties:
+      SubnetId: !Ref SubnetId
+      SecurityGroupIds:
+      - !Ref SecurityGroup
+      KeyName: !Ref KeyPair
+      InstanceType: !Ref InstanceType
+      AvailabilityZone: !Ref AZ
+      ImageId: !Ref LatestUbuntuFocalAMI
+      BlockDeviceMappings:
+        - DeviceName: /dev/sda1
+          Ebs:
+            VolumeType: gp3
+            VolumeSize: 200 # season to taste
+      Tags:
+        - Key: Name
+          Value: packer-test
+      IamInstanceProfile: !Ref InstanceProfile
+      UserData:
+        Fn::Base64: !Sub |
+          #!/bin/bash -xe
+          # TODO redirect logs so can be found in instance -> actions -> instance settings -> Get System log
+          # exec > >(tee /var/log/cloud-init-output.log|logger -t user-data -s 2>/dev/console) 2>&1
+
+          function my_trap() {
+            echo "UserData was unsuccessful!"
+            echo "ERROR while executing User Data. "
+            echo "Scheduling shutdown..." && shutdown -h +60
+            echo "Sending CloudFormation error signal"
+            ln -sf /usr/bin/python3.8 /usr/bin/python3 # revert to default python for cloudformation
+            /opt/aws/bin/cfn-signal -e 1 --stack ${AWS::StackName} --resource PackerInstance --region ${AWS::Region}
+          }
+          trap 'my_trap' ERR
+
+          echo "## Installing Dependencies..."
+          cd /root
+          apt update
+          apt install -y git openssl rsync make jq unzip
+          apt install -y software-properties-common
+
+          # Cloudformation helper scripts on default python 3.8
+          wget --no-verbose -O /tmp/aws-cfn-bootstrap-py3-latest.tar.gz https://s3.amazonaws.com/cloudformation-examples/aws-cfn-bootstrap-py3-latest.tar.gz
+          python3 -m easy_install --script-dir /opt/aws/bin /tmp/aws-cfn-bootstrap-py3-latest.tar.gz
+          # Alt way to install? But need Pip?? # pip install https://s3.amazonaws.com/cloudformation-examples/aws-cfn-bootstrap-latest.tar.gz
+
+          # Python 3.10
+          add-apt-repository ppa:deadsnakes/ppa -y
+          apt install -y python3.10
+          rm /usr/bin/python3 # remove symlink to preinstalled python3.8
+          ln -sf /usr/bin/python3.10 /usr/bin/python3 # set default python3.10
+          ln -sf /usr/bin/python3 /usr/bin/python
+          apt install -y python3.10-distutils
+          apt install -y python3-apt
+          ## Fixes: https://stackoverflow.com/questions/13708180/python-dev-installation-error-importerror-no-module-named-apt-pkg
+          cd /usr/lib/python3/dist-packages
+          ln -s apt_pkg.cpython-38-x86_64-linux-gnu.so apt_pkg.so
+          curl https://bootstrap.pypa.io/get-pip.py | python3
+
+          # Node 16
+          curl -sL https://deb.nodesource.com/setup_16.x | sudo bash -
+          sudo apt -y install nodejs
+          npm install -g ipfs-car
+          apt install -y sysstat iotop
+
+          # AWS CLI v2
+          curl "https://awscli.amazonaws.com/awscli-exe-linux-x86_64.zip" -o "awscliv2.zip"
+          unzip -q awscliv2.zip
+          ./aws/install
+
+          # Golang 1.18 and stream-commp
+          wget --no-verbose -c https://go.dev/dl/go1.18.3.linux-amd64.tar.gz
+          tar -C /usr/local/ -xzf go1.18.3.linux-amd64.tar.gz
+          echo 'export GOPATH=/root/go' >> ~/.bashrc
+          echo 'export GOBIN=$GOPATH/bin' >> ~/.bashrc
+          echo 'export GOROOT=/usr/local/go' >> ~/.bashrc
+          echo 'export PATH=$PATH:$GOPATH/bin:$GOROOT/bin' >> ~/.bashrc
+          # set envars, because sourcing .bashrc appears not to work in userdata.
+          export HOME=/root
+          export GOPATH=/root/go
+          export GOBIN=$GOPATH/bin
+          export GOROOT=/usr/local/go
+          export PATH=$PATH:$GOPATH/bin:$GOROOT/bin
+          go version
+          go install github.com/filecoin-project/go-fil-commp-hashhash/cmd/stream-commp@latest
+          echo "## which stream-commp:"`which stream-commp`
+
+          # Mount NVMe (SSD) instance store volume (Only for EC2 instance types that support it)
+          mkfs -t xfs /dev/nvme1n1
+          apt install -y xfsprogs
+          mkdir /local
+          mount /dev/nvme1n1 /local
+
+          # Repo
+          cd /root
+          git clone https://github.com/frank-ang/packer.git
+          cd /root/packer
+          git fetch
+          git switch test  # testing on "test" branchname
+          pip install -r requirements.txt
+
+          # CLI Smoke test.
+          echo "## Packer CLI installed. Now running CLI smoke test."
+          make init_testdata && make test && make clean
+
+          # Save Packer job config file.
+          export PACKER_CONFIG_FILE=~/packer/packer.conf
+          rm -f $PACKER_CONFIG_FILE
+          echo "PACK_MODE=${PackMode}" >> $PACKER_CONFIG_FILE
+          echo "DATA_SOURCE=${DataSource}" >> $PACKER_CONFIG_FILE
+          echo "DATA_TARGET=${DataTarget}" >> $PACKER_CONFIG_FILE
+          echo "ENCRYPTION_KEY=${EncryptionKey}" >> $PACKER_CONFIG_FILE
+          echo "STAGING_PATH=/local/staging" >> $PACKER_CONFIG_FILE
+          echo "JOBS=1" >> $PACKER_CONFIG_FILE
+          # TODO Install web server and web app.
+
+          # mount NFS.
+          mkdir /nfs
+          # TODO re-enable # mount -t nfs -o nfsvers=4.1,rsize=1048576,wsize=1048576,hard,timeo=600,retrans=2,noresvport $_{_MountTarget_}  /nfs
+
+          # Python 3.8 as default for cloudformation signal
+          ln -sf /usr/bin/python3.8 /usr/bin/python3
+
+          # Install the files and packages from the metadata (not using this actually.)
+          # /opt/aws/bin/cfn-init -v --stack ${AWS::StackName} --resource PackerInstance --region ${AWS::Region}
+
+          # All done, signal success.
+          echo "## Signaling successful to CloudFormation."
+          /opt/aws/bin/cfn-signal --success true --stack ${AWS::StackName} --resource PackerInstance --region ${AWS::Region}
+          echo "EC2 instance inititalization COMPLETE"
+          
+          # Python 3.10 as default again for Packer.
+          ln -sf /usr/bin/python3.10 /usr/bin/python3
+
+          # Launch the script or set a cron?
+          make run_packer_job
+
+    CreationPolicy:
+      ResourceSignal:
+        Timeout: PT10M
+
+# TODO re-enable # mount -t nfs -o nfsvers=4.1,rsize=1048576,wsize=1048576,hard,timeo=600,retrans=2,noresvport $ REMOVE SPACES { MountTarget }  /nfs
+
+#  FileSystem:
+#    Type: AWS::EFS::FileSystem
+#    Properties:
+#      PerformanceMode: generalPurpose
+
+# TODO: use dynamic mount target from params?
+#  MountTarget:
+#    Type: AWS::EFS::MountTarget
+#    Properties:
+#      FileSystemId:
+#        Ref: FileSystem
+#      SubnetId:
+#        Ref: SubnetId
+#      SecurityGroups:
+#      - Ref: SecurityGroup
+
+
+Outputs:
+  InstanceId:
+    Description: InstanceId of the packer EC2 instance
+    Value:
+      Ref: PackerInstance
+  PublicIP:
+    Description: Public IP address of the packer EC2 instance
+    Value:
+      Fn::GetAtt:
+      - PackerInstance
+      - PublicIp

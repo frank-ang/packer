@@ -54,13 +54,13 @@ jobs:
             go install github.com/filecoin-project/go-fil-commp-hashhash/cmd/stream-commp@latest
             which stream-commp
 
-            # ipfs-car
+            # installing ipfs-car
             sudo npm install -g ipfs-car
 
-            # python module deps
+            # installing python module deps
             pip install -r requirements.txt
 
-            # aws cli
+            # installing aws cli
             curl "https://awscli.amazonaws.com/awscli-exe-linux-x86_64.zip" -o "awscliv2.zip"
             sudo unzip awscliv2.zip
             sudo ./aws/install

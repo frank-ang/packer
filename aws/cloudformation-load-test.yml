@@ -42,14 +42,14 @@ Resources:
       SecurityGroupIds:
       - !Ref SecurityGroup
       KeyName: !Ref KeyPair
-      InstanceType: r5d.2xlarge # TODO season to taste
+      InstanceType: r5d.2xlarge # season to taste
       AvailabilityZone: !Ref AZ
       ImageId: !Ref LatestUbuntuFocalAMI
       BlockDeviceMappings:
         - DeviceName: /dev/sda1
           Ebs:
             VolumeType: gp3
-            VolumeSize: 1000  # TODO season to taste
+            VolumeSize: 100  # season to taste
       Tags:
         - Key: Name
           Value: packer-test
@@ -59,7 +59,7 @@ Resources:
           #!/bin/bash
           echo "## Installing Dependencies..."
           apt update
-          apt install git openssl rsync make jq -y
+          apt install git openssl rsync make jq unzip -y
           apt install software-properties-common -y
           add-apt-repository ppa:deadsnakes/ppa -y
           apt install python3.10 -y   # latest ubuntu on AWS has only Python 3.8.10
@@ -90,7 +90,7 @@ Resources:
           apt install -y sysstat iotop
 
           # AWS CLI
-          curl "https://awscli.amazonaws.com/awscli-exe-linux-x86_64.zip" -o "awscliv2.zip"\
+          curl "https://awscli.amazonaws.com/awscli-exe-linux-x86_64.zip" -o "awscliv2.zip"
           unzip awscliv2.zip
           ./aws/install
 
@@ -104,28 +104,23 @@ Resources:
           mkdir /nfs
           mount -t nfs -o nfsvers=4.1,rsize=1048576,wsize=1048576,hard,timeo=600,retrans=2,noresvport ${MountTarget}  /nfs
 
-          # Golang
-          apt install golang-go
-          echo 'export GOPATH=$HOME/go' >> ~/.bashrc
-          echo 'export PATH=$PATH:$HOME/go/bin' >> ~/.bashrc
-          source ~/.bashrc
+          # installing golang stream-commp
+          wget -c https://go.dev/dl/go1.18.3.linux-amd64.tar.gz
+          tar -C /usr/local/ -xzf go1.18.3.linux-amd64.tar.gz
+          echo 'export GOPATH=/root/go' >> ~/.bashrc
+          echo 'export GOBIN=$GOPATH/bin' >> ~/.bashrc
+          echo 'export GOROOT=/usr/local/go' >> ~/.bashrc
+          echo 'export PATH=$PATH:$GOPATH/bin:$GOROOT/bin' >> ~/.bashrc
+          # set envars, because sourcing .bashrc appears not to work in userdata.
+          export HOME=/root
+          export GOPATH=/root/go
+          export GOBIN=$GOPATH/bin
+          export GOROOT=/usr/local/go
+          export PATH=$PATH:$GOPATH/bin:$GOROOT/bin
           go version
           go install github.com/filecoin-project/go-fil-commp-hashhash/cmd/stream-commp@latest
+          echo ">> which stream-commp:"`which stream-commp`
 
-
-
-# EFS (NFS) resources. 
-#  MountTargetSecurityGroup:
-#    Type: AWS::EC2::SecurityGroup
-#    Properties:
-#      VpcId:
-#        Ref: VPC
-#      GroupDescription: Security group for mount target
-#      SecurityGroupIngress:
-#      - IpProtocol: tcp
-#        FromPort: 2049
-#        ToPort: 2049
-#        CidrIp: 0.0.0.0/0
 
   FileSystem:
     Type: AWS::EFS::FileSystem
