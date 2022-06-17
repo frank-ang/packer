@@ -109,9 +109,9 @@ Parameters:
     # Hardcoded
 
   EncryptionKey:
-    Description: TODO IMPLEMENT Automation for Packer Encryption Key / Algo / Toggle
+    Description: Name of encryption secret in AWS Secrets Manager
     Type: String
-    Default: EncryptionKeyDUMMY
+    Default: FilecoinPackerCertificate
     # Hardcoded
 
   PackMode:

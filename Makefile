@@ -107,6 +107,16 @@ clean_test:
 clean_xldata:
 	@rm -rf ${XL_DATA_PATH}/*
 
+init_aws_secrets: init_testdata
+	aws secretsmanager create-secret --name FilecoinPackerPrivateKey \
+              --description "RSA private key PEM for Filecoin encryption" \
+              --secret-string file://${PRIVATE_KEY}
+	aws secretsmanager create-secret --name FilecoinPackerCertificate \
+              --description "RSA private key PEM for Filecoin encryption" \
+              --secret-string file://${CERTIFICATE}
+	aws secretsmanager get-secret-value --secret-id FilecoinPackerPrivateKey
+
+
 init_testdata: clean_test init_certificate_pair
 
 init_certificate_pair:

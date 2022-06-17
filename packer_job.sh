@@ -64,6 +64,9 @@ else
     mkdir -p $DATA_TARGET
 fi
 
+# Retrieve encryption key.
+aws secretsmanager get-secret-value --secret-id $ENCRYPTION_KEY | jq -r '.SecretString' > $ENCRYPTION_KEY
+
 # Execute Packer
 if [ "$PACK_MODE" = "PACK" ]
 then
