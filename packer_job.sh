@@ -70,7 +70,7 @@ fi
 aws secretsmanager get-secret-value --secret-id $ENCRYPTION_KEY | jq -r '.SecretString' > $ENCRYPTION_KEY
 
 # Nginx mounted to $DATA_TARGET
-apt install nginx
+apt install -y nginx
 ufw allow 'Nginx HTTP'
 systemctl status nginx
 curl localhost
