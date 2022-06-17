@@ -31,11 +31,10 @@ elif [[ "$DATA_SOURCE" =~ ^.+:/.*$ ]]; then
     echo "[TODO] Mounting Source NFS endpoint: $NFS_SOURCE_HOST ..."
     # TODO mount at /nfs , nice to have: check if already mounted.
     mkdir /nfs
-    mount -t nfs -o nfsvers=4.1,rsize=1048576,wsize=1048576,hard,timeo=600,retrans=2,noresvport $NFS_SOURCE_HOST /nfs
-
+    mount -t nfs -o nfsvers=4.1,rsize=1048576,wsize=1048576,hard,timeo=600,retrans=2,noresvport $NFS_SOURCE_HOST:/ /nfs
     echo "NFS_SOURCE_PATH: $NFS_SOURCE_PATH"
     MOUNTED_DATA_SOURCE="/nfs$NFS_SOURCE_PATH"
-    echo "[DEBUG] MOUNTED_DATA_SOURCE: $MOUNTED_DATA_SOURCE: , size of path: "`du -sh $MOUNTED_DATA_SOURCE`
+    echo "MOUNTED_DATA_SOURCE: $MOUNTED_DATA_SOURCE: , size of path: "`du -sh $MOUNTED_DATA_SOURCE`
 else
 	echo "DATA_SOURCE is neither NFS nor S3 pattern: $DATA_SOURCE"
 fi

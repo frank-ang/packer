@@ -163,7 +163,7 @@ Resources:
           echo "## Installing Dependencies..."
           cd /root
           apt update
-          apt install -y git openssl rsync make jq unzip
+          apt install -y git openssl rsync make jq unzip nfs-common
           apt install -y software-properties-common
 
           # Cloudformation helper scripts on default python 3.8
