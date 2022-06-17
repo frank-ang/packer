@@ -10,16 +10,11 @@ echo "  STAGING_PATH=$STAGING_PATH"
 echo "  JOBS=$JOBS"
 
 # Mount Source NFS/S3 as required
-# IF NFS then mount; elif S3 then rclone
-# Parse DATA_SOURCE for leading protocol. 
-# E.g. 
+# IF NFS then mount; elif S3 then rclone;
 #   NFS pattern: "fs-d1234567.efs.[region].amazonaws.com:/sub0/sub1/"
 #   S3 pattern:  "S3://bucket-name/key-name"
 
-#export NFS_EXAMPLE_SOURCE="fs-d1234567.efs.ap-southeast-1.amazonaws.com:/sub0/sub1/"
-#export S3_EXAMPLE_SOURCE="S3://bucket-name/key-name"
-#export DATA_SOURCE=$NFS_EXAMPLE_SOURCE # TESTING
-#echo "checking DATA_SOURCE pattern..."
+mkdir -p $STAGING_PATH
 
 # Parse the source string
 if [[ "$DATA_SOURCE" =~ ^[S|s]3://.+/.* ]]; then
@@ -46,7 +41,6 @@ else
 fi
 
 # Parse the target string
-
 if [[ "$DATA_TARGET" =~ ^[S|s]3://.+/.* ]]; then
 	echo "S3 Data Target..."
     S3_TARGET_BUCKET=`echo $DATA_TARGET | sed -E 's/([^:]+).(.*)/\1/'`
@@ -70,7 +64,6 @@ else
     echo "Using local EBS storage as DATA_TARGET: $DATA_TARGET"
     mkdir -p $DATA_TARGET
 fi
-
 
 # Execute Packer
 if [ "$PACK_MODE" = "PACK" ]
