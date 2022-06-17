@@ -33,12 +33,10 @@ elif [[ "$DATA_SOURCE" =~ ^.+:/.*$ ]]; then
     echo "NFS Data Source..."
     NFS_SOURCE_HOST=`echo $DATA_SOURCE | sed -E 's/([^:]+).(.*)/\1/'`
     NFS_SOURCE_PATH=`echo $DATA_SOURCE | sed -E 's/([^:]+).(.*)/\2/'`
-    echo "[TODO] Mounting NFS endpoint: $NFS_SOURCE_HOST ..."
+    echo "[TODO] Mounting Source NFS endpoint: $NFS_SOURCE_HOST ..."
     # TODO mount at /nfs , nice to have: check if already mounted.
     mkdir /nfs
     mount -t nfs -o nfsvers=4.1,rsize=1048576,wsize=1048576,hard,timeo=600,retrans=2,noresvport $NFS_SOURCE_HOST /nfs
-    # TODO Testing only, create test data in NFS if not exist.
-    cp -rf test/source/ $MOUNTED_DATA_SOURCE   # TODO testing only.
 
     echo "NFS_SOURCE_PATH: $NFS_SOURCE_PATH"
     MOUNTED_DATA_SOURCE="/nfs$NFS_SOURCE_PATH"
@@ -60,7 +58,7 @@ elif [[ "$DATA_TARGET" =~ ^.+:/.*$ ]]; then
     echo "NFS Data Target..."
     NFS_TARGET_HOST=`echo $DATA_TARGET | sed -E 's/([^:]+).(.*)/\1/'`
     NFS_TARGET_PATH=`echo $DATA_TARGET | sed -E 's/([^:]+).(.*)/\2/'`
-    echo "[TODO] Mounting NFS endpoint: $NFS_TARGET_HOST ..."
+    echo "[TODO] Mounting Target NFS endpoint: $NFS_TARGET_HOST ..."
     # TODO mount at /nfs , nice to have: check if already mounted, and NFS_SOURCE_HOST == NFS_TARGET_HOST
     # mkdir /nfs_target
     # mount -t nfs -o nfsvers=4.1,rsize=1048576,wsize=1048576,hard,timeo=600,retrans=2,noresvport $NFS_SOURCE_HOST /nfs
