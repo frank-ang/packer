@@ -1,4 +1,6 @@
 #! /bin/bash
+set -e
+
 . ./packer.conf
 echo "📦📦📦📦 Running script: $0 📦📦📦📦"
 echo "dumping config..."
@@ -66,6 +68,12 @@ fi
 
 # Retrieve encryption key.
 aws secretsmanager get-secret-value --secret-id $ENCRYPTION_KEY | jq -r '.SecretString' > $ENCRYPTION_KEY
+
+# Nginx mounted to $DATA_TARGET
+apt install nginx
+ufw allow 'Nginx HTTP'
+systemctl status nginx
+curl localhost
 
 # Execute Packer
 if [ "$PACK_MODE" = "PACK" ]
