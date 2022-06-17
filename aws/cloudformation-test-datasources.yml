@@ -1,0 +1,63 @@
+AWSTemplateFormatVersion: '2010-09-09'
+
+Description: Packer Test Data Sources
+
+Parameters: 
+
+  VPC:
+    Description: VPC ID.
+    Type: AWS::EC2::VPC::Id
+    Default: vpc-0b66bf645342935b5
+    # Hardcoded
+
+  AZ:
+    Description: Availability Zone placement
+    Type: AWS::EC2::AvailabilityZone::Name
+    Default: ap-southeast-1a
+    # Hardcoded
+
+  SubnetId:
+    Description: Subnet ID placement
+    Type: AWS::EC2::Subnet::Id
+    Default: subnet-0728cf0c3c454fff1
+    # Hardcoded
+
+  SecurityGroup:
+    Type: AWS::EC2::SecurityGroup::Id
+    Description: Security group ID
+    Default: sg-06788998bef10dbb7
+    # Hardcoded
+
+  BucketName:
+    Type: String
+    Description: Bucket Name
+    Default: packer-test-unique-name
+
+Resources:
+
+  FileSystem:
+    Type: AWS::EFS::FileSystem
+    Properties:
+      PerformanceMode: generalPurpose
+
+  MountTarget:
+    Type: AWS::EFS::MountTarget
+    Properties:
+      FileSystemId:
+        Ref: FileSystem
+      SubnetId:
+        Ref: SubnetId
+      SecurityGroups:
+      - Ref: SecurityGroup
+
+  S3Bucket:
+    Type: 'AWS::S3::Bucket'
+    Properties:
+      BucketName: 
+        Ref: BucketName
+
+Outputs:
+  FileSystem:
+    Description: EFS FileSystem
+    Value:
+      Ref: FileSystem

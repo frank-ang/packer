@@ -97,15 +97,15 @@ Parameters:
       - c5d.4xlarge
 
   DataSource:
-    Description: Source path of input filesystem. ( TODO, S3 bucket/path ) # TODO: automate mounting NFS; Configure S3 client.
+    Description: Source path of input filesystem. ( S3 or NFS path formats ) # TODO: automate mounting NFS; Configure S3 client.
     Type: String
-    Default: /DataSourceDUMMY
+    Default: fs-09757dc39611cad69.efs.ap-southeast-1.amazonaws.com:/
     # Hardcoded
 
   DataTarget:
     Description: Target path for output packaged CAR files.
     Type: String
-    Default: /DataTargetDUMMY
+    Default: /root/packer/test/output
     # Hardcoded
 
   EncryptionKey:
@@ -241,8 +241,8 @@ Resources:
           echo "JOBS=1" >> $PACKER_CONFIG_FILE
           # TODO Install web server and web app.
 
-          # mount NFS.
-          mkdir /nfs
+          # [DEPRECATED] now, NFS mount is done automatically by the packer script.
+          # mkdir /nfs
           # TODO re-enable # mount -t nfs -o nfsvers=4.1,rsize=1048576,wsize=1048576,hard,timeo=600,retrans=2,noresvport $_{_MountTarget_}  /nfs
 
           # Python 3.8 as default for cloudformation signal
@@ -259,8 +259,10 @@ Resources:
           # Python 3.10 as default again for Packer.
           ln -sf /usr/bin/python3.10 /usr/bin/python3
 
-          # Launch the script or set a cron?
-          make run_packer_job
+          # Launch the packer job
+          echo "## Packer Job launching..."
+          nohup make run_packer_job > run_packer_job_nohup.out 2>&1 &
+          echo "## Packer Job launched in background."
 
     CreationPolicy:
       ResourceSignal:

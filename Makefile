@@ -33,6 +33,7 @@ CERTIFICATE:=${CERTIFICATE_ROOT}/certificate.pem
 PRIVATE_KEY:=${CERTIFICATE_ROOT}/private_key.pem
 AWS_LOAD_TEST_TEMPLATE:=./aws/cloudformation-load-test.yml
 AWS_APPLIANCE_TEMPLATE:=./aws/cloudformation-appliance.yml
+AWS_TEST_DATASOURCES_TEMPLATE:=./aws/cloudformation-test-datasources.yml
 JOBS:=1
 
 run_packer_job:
@@ -205,3 +206,18 @@ recreate_appliance: delete_appliance wait_delete_appliance create_appliance
 
 wait_delete_appliance:
 	aws cloudformation wait stack-delete-complete --stack-name filecoin-packer-appliance-test
+
+create_test_datasources:
+	@echo "Creating Test Datasources in AWS".
+	aws cloudformation validate-template --template-body file://${AWS_TEST_DATASOURCES_TEMPLATE}
+	time aws cloudformation deploy --capabilities CAPABILITY_IAM \
+      --template-file ${AWS_TEST_DATASOURCES_TEMPLATE}  \
+      --parameter-overrides "VPC=${AWS_VPC}" "AZ=${AWS_AZ}" "SubnetId=${AWS_SUBNET}" \
+         "SecurityGroup=${AWS_SECURITY_GROUP}" \
+      --stack-name "filecoin-packer-test-datasources" \
+      --tags "project=filecoin"
+	@echo "Packer Load Test EC2 Ubuntu instance IP: "`aws cloudformation describe-stacks --stack-name filecoin-packer-test-datasources | jq '.Stacks[].Outputs[]|select(.OutputKey=="FileSystemDnsName").OutputValue' -r`
+
+delete_test_datasources:
+	@echo "Deleting Test Datasources..."
+	aws cloudformation delete-stack --stack-name filecoin-packer-test-datasources
