@@ -69,26 +69,25 @@ fi
 # Retrieve encryption key.
 aws secretsmanager get-secret-value --secret-id $ENCRYPTION_KEY | jq -r '.SecretString' > $ENCRYPTION_KEY
 
-# Nginx
-apt install -y nginx
-ufw allow 'Nginx HTTP'
-# TODO nginx config file allow directory listing of $DATA_TARGET web root.
-# (deprecated) ln -s $DATA_TARGET /var/www/html/packer
-cp -f /etc/nginx/conf/httpd.conf /etc/nginx/conf/httpd.conf.orig
-cp -f /root/packer/aws/httpd.conf /etc/nginx/conf/httpd.conf
-systemctl restart nginx
-systemctl status nginx
-curl localhost
-
 # Execute Packer
 if [ "$PACK_MODE" = "PACK" ]
 then
-    echo "packing..."
+    echo "📦📦📦📦  Packing..."
     time python ./packer.py --pack --source $MOUNTED_DATA_SOURCE --tmp $STAGING_PATH --output $DATA_TARGET --key $ENCRYPTION_KEY --jobs $JOBS
+
+    echo "📦📦📦📦  Setting up Nginx..."
+    apt install -y nginx
+    ufw allow 'Nginx HTTP'
+    cp -f /etc/nginx/sites-available/default /etc/nginx/sites-available-default-orig.bak
+    cp -f /root/packer/aws/etc-nginx-sites-available-default /etc/nginx/sites-available/default
+    systemctl restart nginx
+    systemctl status nginx
+    curl localhost
+
 
 elif [ "$PACK_MODE" = "UNPACK" ]
 then
-	echo "unpacking..."
+	echo "📦📦📦📦  Unpacking..."
     time python ./packer.py --unpack --source $MOUNTED_DATA_SOURCE --tmp $STAGING_PATH --output $DATA_TARGET --key $ENCRYPTION_KEY --jobs $JOBS
 else
 	echo "Unexpected PACK_MODE value: $PACK_MODE."
