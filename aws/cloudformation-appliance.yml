@@ -75,8 +75,6 @@ Parameters:
     Description: Ubuntu AMI
     Type: AWS::SSM::Parameter::Value<AWS::EC2::Image::Id>
     Default: /aws/service/canonical/ubuntu/server/focal/stable/current/amd64/hvm/ebs-gp2/ami-id
-    ##Type: String
-    ##Default: ami-059fcf742de12af88
 
   InstanceType:
     Description: EC2 Instance Type

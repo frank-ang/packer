@@ -69,9 +69,14 @@ fi
 # Retrieve encryption key.
 aws secretsmanager get-secret-value --secret-id $ENCRYPTION_KEY | jq -r '.SecretString' > $ENCRYPTION_KEY
 
-# Nginx mounted to $DATA_TARGET
+# Nginx
 apt install -y nginx
 ufw allow 'Nginx HTTP'
+# TODO nginx config file allow directory listing of $DATA_TARGET web root.
+# (deprecated) ln -s $DATA_TARGET /var/www/html/packer
+cp -f /etc/nginx/conf/httpd.conf /etc/nginx/conf/httpd.conf.orig
+cp -f /root/packer/aws/httpd.conf /etc/nginx/conf/httpd.conf
+systemctl restart nginx
 systemctl status nginx
 curl localhost
 
