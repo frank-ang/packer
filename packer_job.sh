@@ -77,12 +77,13 @@ then
 
     echo "📦📦📦📦  Setting up Nginx..."
     apt install -y nginx
-    ufw allow 'Nginx HTTP'
+    ufw allow 'nginx http' # Port 80 only. To add 443, 'nginx full'
+    ufw reload
     cp -f /etc/nginx/sites-available/default /etc/nginx/sites-available-default-orig.bak
     cp -f /root/packer/aws/etc-nginx-sites-available-default /etc/nginx/sites-available/default
     systemctl restart nginx
     systemctl status nginx
-    curl localhost
+    curl -i localhost
 
 
 elif [ "$PACK_MODE" = "UNPACK" ]
