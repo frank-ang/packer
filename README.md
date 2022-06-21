@@ -57,7 +57,26 @@ Initial testing suggests Packer packing rate on 1 instance of AWS EC2 r5d.2xlarg
 
 # Quick Start appliance on AWS
 
-If you more interested in automation to generate a CAR set from AWS EFS or AWS S3, a convenience [CloudFormation template](./aws/aws.md) is available to launch an EC2 appliance, configure packer, execute a packing job, and host the packed CAR set on a web server.
+If you more interested in automation to generate a CAR set from AWS EFS or AWS S3, a convenience [CloudFormation template](https://filecoin-packer.s3.ap-southeast-1.amazonaws.com/filecoin-packer-aws-appliance.yml), and view the docs](./aws/aws.md) is available to launch an EC2 appliance, configure packer, execute a packing job, and host the packed CAR set on a web server.
+
+To get started, [Click here to launch the quick-start in your AWS account (example in Singapore region).](https://console.aws.amazon.com/cloudformation/home?region=ap-southeast-1#/stacks/new?&templateURL=https://filecoin-packer.s3.ap-southeast-1.amazonaws.com/filecoin-packer-aws-appliance.yml&stackName=filecoin-packer-quickstart) !
+
+
+TEMP:
+https://eu-central-1.console.aws.amazon.com/cloudformation/home?region=eu-central-1#/stacks/create/review
+   ?templateURL=https://s3.eu-central-1.amazonaws.com/cloudformation-templates-eu-central-1/WordPress_Single_Instance.template
+   &stackName=MyWPBlog
+
+https://eu-central-1.console.aws.amazon.com/cloudformation/home?region=eu-central-1#/stacks/create/review
+   ?templateURL=https://s3.eu-central-1.amazonaws.com/cloudformation-templates-eu-central-1/WordPress_Single_Instance.template
+   &stackName=MyWPBlog
+   &param_DBName=mywpblog
+   &param_InstanceType=t2.medium
+   &param_KeyName=MyKeyPair
+
+
+https://console.aws.amazon.com/cloudformation/home?region=us-east-1#/stacks/new?&templateURL=https://solutions-reference.s3.amazonaws.com/aws-security-hub-automated-response-and-remediation/latest/aws-sharr-deploy.template
+
 
 # Usage:
 

@@ -32,15 +32,10 @@ CERTIFICATE_ROOT:=./test/security.rsa.gitignore
 CERTIFICATE:=${CERTIFICATE_ROOT}/certificate.pem
 PRIVATE_KEY:=${CERTIFICATE_ROOT}/private_key.pem
 AWS_LOAD_TEST_TEMPLATE:=./aws/cloudformation-load-test.yml
-AWS_APPLIANCE_TEMPLATE:=./aws/cloudformation-appliance.yml
+AWS_APPLIANCE_TEMPLATE:=./aws/filecoin-packer-aws-appliance.yml
 AWS_TEST_DATASOURCES_TEMPLATE:=./aws/cloudformation-test-datasources.yml
 JOBS:=1
 
-run_packer_job:
-	@echo "📦📦📦📦 Running Packer Job script ... 📦📦📦📦"
-	./packer_job.sh
-	@echo "📦📦📦📦 Completed Packer Job script ... 📦📦📦📦"
-# TODO 
 
 help:
 	echo "Packer makefile"
@@ -231,3 +226,15 @@ create_test_datasources:
 delete_test_datasources:
 	@echo "Deleting Test Datasources..."
 	aws cloudformation delete-stack --stack-name filecoin-packer-test-datasources
+
+
+run_packer_job:
+	@echo "📦📦📦📦 Running Packer Job script ... 📦📦📦📦"
+	./packer_job.sh
+	@echo "📦📦📦📦 Completed Packer Job script ... 📦📦📦📦"
+
+
+publish_cloudformation_template:
+	@echo "updating cloudformation template to AWS S3"
+	aws s3 cp ${AWS_APPLIANCE_TEMPLATE} s3://filecoin-packer/filecoin-packer-aws-appliance.yml
+#https://filecoin-packer.s3.ap-southeast-1.amazonaws.com/filecoin-packer-aws-appliance.yml
