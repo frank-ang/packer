@@ -10,13 +10,29 @@ Utility to perform packaging of files for Filecoin deals. Performs: file encrypt
 
 # Objective.
 
-To provide a tool for packaging large potentially proprietary data sets into the Filecoin network. Objective is to reduce friction for data movement, across both online deal and offline deal paths.
+Client-side tool for packaging large potentially proprietary data sets into the Filecoin network. Objective is to reduce friction for data movement, across both online deal and offline deal paths.
 
 ## Benefits:
 * Standardization of packaging toolset for large proprietary data sets scenarios.
 * Removes lower-level undifferentiated heavy lifting, that the Filecoin ecosystem can reuse in multiple contexts such as "Data storage broker", "Data storage concentrator" e.g. Estuary, Sneakernet provider, Data Client using DIY offline path.
 
-## Supported source storage system types (for MVP):
+## Functionality
+
+Packing:
+* Split large files
+* Encrypt files (RSA-AES asymmetric)
+* Pack into CAR set
+* Parallelism
+
+Unpacking:
+* Unpack from CAR set
+* Decrypt files
+* Join split files into original file
+* Restore files into filesystem.
+
+## Source storage system types:
+
+Current supported filesystems:
 * POSIX NFS / DASD file system.
 
 Future/Backlog options to support additional sources, particularly cloud object storage:
@@ -35,9 +51,19 @@ Cryptographic methods TODO:
 * RSA AES CBC (symmetric)
 * GnuPGP
 
-## Testing & Benchmarking
+## Performance.
 
-Post-MVP, it will be essential to run scalability tests and benchmarks.  
+Initial testing suggests Packer packing rate on 1 instance of AWS EC2 r5d.2xlarge (8 vCPU, 64GB memory, 1x300GiB NVMe), EFS input with 100GB files, output to EBS, RSA-AES encryption, was approximately 120GiB/hr packing rate (2.88TiB/day).
+
+# Quick Start appliance on AWS
+
+If you more interested in automation to generate a CAR set from AWS EFS or AWS S3, a convenience, [view the quickstart docs](./aws/aws.md) is available to launch an EC2 appliance, configure packer, execute a packing job, and host the packed CAR set on a web server.
+
+To get started,
+
+* Launch the quick-start stack into your AWS console using the [CloudFormation template](https://filecoin-packer.s3.ap-southeast-1.amazonaws.com/filecoin-packer-aws-appliance.yml)
+* Convenience: [Launch the quick-start into AWS Singapore Region](https://console.aws.amazon.com/cloudformation/home?region=ap-southeast-1#/stacks/new?&templateURL=https://filecoin-packer.s3.ap-southeast-1.amazonaws.com/filecoin-packer-aws-appliance.yml&stackName=filecoin-packer-quickstart)
+
 
 # Usage:
 
@@ -64,7 +90,6 @@ options:
 
 ```
 
-
 # Installation
 
 ## Prerequisites
@@ -76,6 +101,7 @@ Dependencies.
 * ipfs-car
 * rsync
 * openssl
+* [stream-commp](github.com/filecoin-project/go-fil-commp-hashhash/cmd/stream-commp)
 
 Refer to Cloudformation yaml file for Ubuntu install commands.
 
@@ -110,14 +136,16 @@ openssl req -x509 -nodes -days 36500 -newkey rsa:2048 -keyout private_key.pem -o
 # Backlog / Caveats
 
 ## Backlog Improvements:
-* Generate CommP per CAR output.
-* Output manifest of file-car mappings.
-* Toggle encryption.
+TODO:
 * AWS Packer AMI with CloudFormation template using IAM instance profile for EFS use-case, on-prem NFS via DX use-case, S3 use-case.
-* S3 support.
+* Manifest file containing file-car-CommPCID mappings.
+* Preserve file mtime in Manifest file. (Prereq for future incremental backup use-case?)
+* Toggle encryption on/off.
+* S3 support (probably rclone).
 * Additional cryptographic methods: RSA-AES symmetric; GnuPG
+* Filename/dirname obfuscation/encryption. (current implementation preserves cleartext path names in the CAR)
+* Metrics for job progress.
 * Compression.
-* Filename / dirname obfuscation. (current implementation preserves cleartext path names in the CAR)
 
 See [issues](https://github.com/frank-ang/packer/issues).
 
@@ -126,6 +154,8 @@ See [issues](https://github.com/frank-ang/packer/issues).
 
 * Path names are transparently stored in CAR files in clear, although individual files are encrypted. User is responsible for ensuring source filesystem pathnames are hidden (e.g. preprocess all data into TAR files), obfuscated, or otherwise does not contain privacy information.
 * POSIX metadata (e.g. mtime) are discarded since CAR files do not preserve file metadata. Workaround is for the user to preprocess all data into TAR files (same workaround as for path name privacy)
+* Packer and the Packer Appliance does NOT push data to Filecoin Storage Providers, nor push data to gateways such as Estuary. Packer does NOT prescribe or constrain the downstream data transfer process. Flexibility and pluggability is a design tenet of Packer.
+* Packer and the Packer Appliance does NOT make Filecoin deals. Packer's primary purpose is file packaging into Content ARchives. Deals requires Lotus client, and can exectured by a a downstream process. Packer does NOT prescribe or constrain the downstream dealmaking process.
 
 
 # License

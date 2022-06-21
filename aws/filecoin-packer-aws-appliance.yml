@@ -75,13 +75,11 @@ Parameters:
     Description: Ubuntu AMI
     Type: AWS::SSM::Parameter::Value<AWS::EC2::Image::Id>
     Default: /aws/service/canonical/ubuntu/server/focal/stable/current/amd64/hvm/ebs-gp2/ami-id
-    ##Type: String
-    ##Default: ami-059fcf742de12af88
 
   InstanceType:
     Description: EC2 Instance Type
     Type: String
-    Default: r5d.xlarge
+    Default: r5d.2xlarge
     AllowedValues:
       - r5d.large
       - r5d.xlarge
@@ -97,21 +95,21 @@ Parameters:
       - c5d.4xlarge
 
   DataSource:
-    Description: Source path of input filesystem. ( TODO, S3 bucket/path ) # TODO: automate mounting NFS; Configure S3 client.
+    Description: Source path of input filesystem. ( S3 or NFS path formats ) # TODO: automate mounting NFS; Configure S3 client.
     Type: String
-    Default: /DataSourceDUMMY
+    Default: fs-09757dc39611cad69.efs.ap-southeast-1.amazonaws.com:/
     # Hardcoded
 
   DataTarget:
     Description: Target path for output packaged CAR files.
     Type: String
-    Default: /DataTargetDUMMY
+    Default: /root/packer/test/output
     # Hardcoded
 
   EncryptionKey:
-    Description: TODO IMPLEMENT Automation for Packer Encryption Key / Algo / Toggle
+    Description: Name of encryption secret in AWS Secrets Manager
     Type: String
-    Default: EncryptionKeyDUMMY
+    Default: FilecoinPackerCertificate
     # Hardcoded
 
   PackMode:
@@ -156,14 +154,16 @@ Resources:
             echo "Scheduling shutdown..." && shutdown -h +60
             echo "Sending CloudFormation error signal"
             ln -sf /usr/bin/python3.8 /usr/bin/python3 # revert to default python for cloudformation
-            /opt/aws/bin/cfn-signal -e 1 --stack ${AWS::StackName} --resource PackerInstance --region ${AWS::Region}
+            ## TODO do not signal fail. Preserve failed instance for debugging.
+            ## /opt/aws/bin/cfn-signal -e 1 --stack ${AWS::StackName} --resource PackerInstance --region ${AWS::Region}
+            /opt/aws/bin/cfn-signal --success true --stack ${AWS::StackName} --resource PackerInstance --region ${AWS::Region}
           }
           trap 'my_trap' ERR
 
           echo "## Installing Dependencies..."
           cd /root
           apt update
-          apt install -y git openssl rsync make jq unzip
+          apt install -y git openssl rsync make jq unzip nfs-common
           apt install -y software-properties-common
 
           # Cloudformation helper scripts on default python 3.8
@@ -238,12 +238,7 @@ Resources:
           echo "DATA_TARGET=${DataTarget}" >> $PACKER_CONFIG_FILE
           echo "ENCRYPTION_KEY=${EncryptionKey}" >> $PACKER_CONFIG_FILE
           echo "STAGING_PATH=/local/staging" >> $PACKER_CONFIG_FILE
-          echo "JOBS=1" >> $PACKER_CONFIG_FILE
-          # TODO Install web server and web app.
-
-          # mount NFS.
-          mkdir /nfs
-          # TODO re-enable # mount -t nfs -o nfsvers=4.1,rsize=1048576,wsize=1048576,hard,timeo=600,retrans=2,noresvport $_{_MountTarget_}  /nfs
+          echo "JOBS=6" >> $PACKER_CONFIG_FILE
 
           # Python 3.8 as default for cloudformation signal
           ln -sf /usr/bin/python3.8 /usr/bin/python3
@@ -259,31 +254,14 @@ Resources:
           # Python 3.10 as default again for Packer.
           ln -sf /usr/bin/python3.10 /usr/bin/python3
 
-          # Launch the script or set a cron?
-          make run_packer_job
+          # Launch the packer job
+          echo "## Packer Job launching..."
+          nohup make run_packer_job > run_packer_job_nohup.out 2>&1 &
+          echo "## Packer Job launched in background."
 
     CreationPolicy:
       ResourceSignal:
         Timeout: PT10M
-
-# TODO re-enable # mount -t nfs -o nfsvers=4.1,rsize=1048576,wsize=1048576,hard,timeo=600,retrans=2,noresvport $ REMOVE SPACES { MountTarget }  /nfs
-
-#  FileSystem:
-#    Type: AWS::EFS::FileSystem
-#    Properties:
-#      PerformanceMode: generalPurpose
-
-# TODO: use dynamic mount target from params?
-#  MountTarget:
-#    Type: AWS::EFS::MountTarget
-#    Properties:
-#      FileSystemId:
-#        Ref: FileSystem
-#      SubnetId:
-#        Ref: SubnetId
-#      SecurityGroups:
-#      - Ref: SecurityGroup
-
 
 Outputs:
   InstanceId:

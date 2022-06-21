@@ -20,7 +20,7 @@ RESTORE_PATH:=./test/restore
 # To run an XL-sized test, start a tmux session, and run the following:
 # ```
 # make init_testdata
-# time make -j 6 init_xldata 
+# time make -j [THREADS] init_xldata
 # time make test_xl >> test.log 2>&1
 # ```
 # INSTRUCTIONS: Create the following config file, based on template file: config.mk
@@ -32,14 +32,10 @@ CERTIFICATE_ROOT:=./test/security.rsa.gitignore
 CERTIFICATE:=${CERTIFICATE_ROOT}/certificate.pem
 PRIVATE_KEY:=${CERTIFICATE_ROOT}/private_key.pem
 AWS_LOAD_TEST_TEMPLATE:=./aws/cloudformation-load-test.yml
-AWS_APPLIANCE_TEMPLATE:=./aws/cloudformation-appliance.yml
+AWS_APPLIANCE_TEMPLATE:=./aws/filecoin-packer-aws-appliance.yml
+AWS_TEST_DATASOURCES_TEMPLATE:=./aws/cloudformation-test-datasources.yml
 JOBS:=1
 
-run_packer_job:
-	@echo "📦📦📦📦 Running Packer Job script ... 📦📦📦📦"
-	./packer_job.sh
-	@echo "📦📦📦📦 Completed Packer Job script ... 📦📦📦📦"
-# TODO 
 
 help:
 	echo "Packer makefile"
@@ -106,6 +102,16 @@ clean_test:
 clean_xldata:
 	@rm -rf ${XL_DATA_PATH}/*
 
+init_aws_secrets: init_testdata
+	aws secretsmanager create-secret --name FilecoinPackerPrivateKey \
+              --description "RSA private key PEM for Filecoin encryption" \
+              --secret-string file://${PRIVATE_KEY}
+	aws secretsmanager create-secret --name FilecoinPackerCertificate \
+              --description "RSA private key PEM for Filecoin encryption" \
+              --secret-string file://${CERTIFICATE}
+	aws secretsmanager get-secret-value --secret-id FilecoinPackerPrivateKey
+
+
 init_testdata: clean_test init_certificate_pair
 
 init_certificate_pair:
@@ -146,23 +152,23 @@ init_largedata: init_testdata
 # Finding: AWS Egress cost will be multiples of S3 standard storage cost.
 # *  https://calculator.aws/#/estimate?id=121d54cc893c4fc91220b34547dd37af9d80cbdd
 #
-# Generate bins of test data with 10 parallel processes:
-# ```time make -j 10 init_xldata```
-init_xldata: 0.init_xldata_bin 1.init_xldata_bin 2.init_xldata_bin 3.init_xldata_bin 4.init_xldata_bin 5.init_xldata_bin 6.init_xldata_bin 7.init_xldata_bin 8.init_xldata_bin 9.init_xldata_bin
+# Generate bins of test data with parallel processes:
+# ```time make -j 6 init_xldata```
+init_xldata: 0.init_xldata_bin 1.init_xldata_bin 2.init_xldata_bin 3.init_xldata_bin 4.init_xldata_bin 5.init_xldata_bin 
+# 6.init_xldata_bin 7.init_xldata_bin 8.init_xldata_bin 9.init_xldata_bin
 	@echo "🛠 completed jumbo test data creation. File count: "`find "${XL_DATA_PATH}/ -type f" | wc -l`" , total size: "`du -sh ${XL_DATA_PATH}`" 🛠"
 
-
-# Generate test data in 1 bin. 10GB
+# Helper to generate test data in 1 bin. 33.5GiB per bin.
 %.init_xldata_bin:
 	@mkdir -p ${XL_DATA_PATH}
 	@echo "##🛠 Bin:$*, creating 1KiB files..."
 	./test/gen-large-test-data.sh -c 1000 -s 1024 -p dummy-KiB -d "${XL_DATA_PATH}/$*/1KiB"
 	@echo "##🛠 Bin:$*, creating 1MiB files..." 
-	./test/gen-large-test-data.sh -c 10 -s $$(( 1024 * 1024)) -p dummy-MiB -d "${XL_DATA_PATH}/$*/1MiB"
+	./test/gen-large-test-data.sh -c 500 -s $$(( 1024 * 1024)) -p dummy-MiB -d "${XL_DATA_PATH}/$*/1MiB"
 	@echo "##🛠 Bin:$*, creating 1GiB files..."
-	./test/gen-large-test-data.sh -c 1 -s $$(( 1024 * 1024 * 1024)) -p dummy-GiB -d "${XL_DATA_PATH}/$*/1GiB"
-	@echo "##🛠 Bin:$*, creating 9GiB files..."
-	./test/gen-large-test-data.sh -c 1 -s $$(( 1024 * 1024 * 1024 * 9 )) -p dummy-9GiB -d "${XL_DATA_PATH}/$*/9GiB"
+	./test/gen-large-test-data.sh -c 23 -s $$(( 1024 * 1024 * 1024)) -p dummy-GiB -d "${XL_DATA_PATH}/$*/1GiB"
+	@echo "##🛠 Bin:$*, creating 10GiB files..."
+	./test/gen-large-test-data.sh -c 1 -s $$(( 1024 * 1024 * 1024 * 10 )) -p dummy-10GiB -d "${XL_DATA_PATH}/$*/10GiB"
 
 
 # AWS resources.
@@ -191,7 +197,12 @@ create_appliance:
 	time aws cloudformation deploy --capabilities CAPABILITY_IAM \
       --template-file ${AWS_APPLIANCE_TEMPLATE}  \
       --parameter-overrides "VPC=${AWS_VPC}" "AZ=${AWS_AZ}" "SubnetId=${AWS_SUBNET}" \
-         "KeyPair=${AWS_KEY_PAIR}" "SecurityGroup=${AWS_SECURITY_GROUP}" "InstanceProfile=${AWS_INSTANCE_PROFILE}" \
+         "KeyPair=${AWS_KEY_PAIR}" "SecurityGroup=${AWS_SECURITY_GROUP}" \
+		 "InstanceProfile=${AWS_INSTANCE_PROFILE}" \
+		 "DataSource=fs-09757dc39611cad69.efs.ap-southeast-1.amazonaws.com:/xl-source" \
+		 "DataTarget=/nfs/xl-output" \
+		 "EncryptionKey=FilecoinPackerCertificate" \
+		 "PackMode=PACK" \
       --stack-name "filecoin-packer-appliance-test" \
       --tags "project=filecoin"
 	@echo "Packer Load Test EC2 Ubuntu instance IP: "`aws cloudformation describe-stacks --stack-name filecoin-packer-appliance-test | jq '.Stacks[].Outputs[]|select(.OutputKey=="PublicIP").OutputValue' -r`
@@ -205,3 +216,30 @@ recreate_appliance: delete_appliance wait_delete_appliance create_appliance
 
 wait_delete_appliance:
 	aws cloudformation wait stack-delete-complete --stack-name filecoin-packer-appliance-test
+
+create_test_datasources:
+	@echo "Creating Test Datasources in AWS".
+	aws cloudformation validate-template --template-body file://${AWS_TEST_DATASOURCES_TEMPLATE}
+	time aws cloudformation deploy --capabilities CAPABILITY_IAM \
+      --template-file ${AWS_TEST_DATASOURCES_TEMPLATE}  \
+      --parameter-overrides "VPC=${AWS_VPC}" "AZ=${AWS_AZ}" "SubnetId=${AWS_SUBNET}" \
+         "SecurityGroup=${AWS_SECURITY_GROUP}" \
+      --stack-name "filecoin-packer-test-datasources" \
+      --tags "project=filecoin"
+	@echo "Packer Load Test EC2 Ubuntu instance IP: "`aws cloudformation describe-stacks --stack-name filecoin-packer-test-datasources | jq '.Stacks[].Outputs[]|select(.OutputKey=="FileSystemDnsName").OutputValue' -r`
+
+delete_test_datasources:
+	@echo "Deleting Test Datasources..."
+	aws cloudformation delete-stack --stack-name filecoin-packer-test-datasources
+
+
+run_packer_job:
+	@echo "📦📦📦📦 Running Packer Job script ... 📦📦📦📦"
+	./packer_job.sh
+	@echo "📦📦📦📦 Completed Packer Job script ... 📦📦📦📦"
+
+
+publish_cloudformation_template:
+	@echo "updating cloudformation template to AWS S3"
+	aws s3 cp ${AWS_APPLIANCE_TEMPLATE} s3://filecoin-packer/filecoin-packer-aws-appliance.yml
+#https://filecoin-packer.s3.ap-southeast-1.amazonaws.com/filecoin-packer-aws-appliance.yml

@@ -227,6 +227,7 @@ def pack_staging_to_car(config) -> None:
             logging.debug("# CAR File: {}; dumping stream-commp output: {}".format(car_file_path, commp_cmd_out))
         except CalledProcessError as e:
             raise Exception(e.output) from e
+        # TODO append CarName, CommPCiD, and each file inside, into the job manifest file.
 
 
 def unpack_car_to_staging(config, path) -> None:
