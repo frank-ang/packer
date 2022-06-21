@@ -6,9 +6,6 @@ server {
 
 	autoindex on; # Enable directory listing for Filecoin Packer packed output.
 
-	#root /root/packer/test/output;  # Filecoin Packer output CAR files. TODO use sed variable substitution instead of hardcoding.
-	root html
-
 	index index.html index.htm index.nginx-debian.html;
 
 	server_name _;

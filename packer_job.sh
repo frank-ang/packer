@@ -89,6 +89,7 @@ then
     systemctl restart nginx
     systemctl status nginx
     curl -i localhost
+    curl -i localhost/car
 
 
 elif [ "$PACK_MODE" = "UNPACK" ]

@@ -154,7 +154,9 @@ Resources:
             echo "Scheduling shutdown..." && shutdown -h +60
             echo "Sending CloudFormation error signal"
             ln -sf /usr/bin/python3.8 /usr/bin/python3 # revert to default python for cloudformation
-            /opt/aws/bin/cfn-signal -e 1 --stack ${AWS::StackName} --resource PackerInstance --region ${AWS::Region}
+            ## TODO do not signal fail. Preserve failed instance for debugging.
+            ## /opt/aws/bin/cfn-signal -e 1 --stack ${AWS::StackName} --resource PackerInstance --region ${AWS::Region}
+            /opt/aws/bin/cfn-signal --success true --stack ${AWS::StackName} --resource PackerInstance --region ${AWS::Region}
           }
           trap 'my_trap' ERR
 
