@@ -197,7 +197,12 @@ create_appliance:
 	time aws cloudformation deploy --capabilities CAPABILITY_IAM \
       --template-file ${AWS_APPLIANCE_TEMPLATE}  \
       --parameter-overrides "VPC=${AWS_VPC}" "AZ=${AWS_AZ}" "SubnetId=${AWS_SUBNET}" \
-         "KeyPair=${AWS_KEY_PAIR}" "SecurityGroup=${AWS_SECURITY_GROUP}" "InstanceProfile=${AWS_INSTANCE_PROFILE}" \
+         "KeyPair=${AWS_KEY_PAIR}" "SecurityGroup=${AWS_SECURITY_GROUP}" \
+		 "InstanceProfile=${AWS_INSTANCE_PROFILE}" \
+		 "DataSource=fs-09757dc39611cad69.efs.ap-southeast-1.amazonaws.com:/xl-source" \
+		 "DataTarget=/nfs/xl-output" \
+		 "EncryptionKey=FilecoinPackerCertificate" \
+		 "PackMode=PACK" \
       --stack-name "filecoin-packer-appliance-test" \
       --tags "project=filecoin"
 	@echo "Packer Load Test EC2 Ubuntu instance IP: "`aws cloudformation describe-stacks --stack-name filecoin-packer-appliance-test | jq '.Stacks[].Outputs[]|select(.OutputKey=="PublicIP").OutputValue' -r`

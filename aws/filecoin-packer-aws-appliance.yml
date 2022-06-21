@@ -79,7 +79,7 @@ Parameters:
   InstanceType:
     Description: EC2 Instance Type
     Type: String
-    Default: r5d.xlarge
+    Default: r5d.2xlarge
     AllowedValues:
       - r5d.large
       - r5d.xlarge
@@ -238,12 +238,7 @@ Resources:
           echo "DATA_TARGET=${DataTarget}" >> $PACKER_CONFIG_FILE
           echo "ENCRYPTION_KEY=${EncryptionKey}" >> $PACKER_CONFIG_FILE
           echo "STAGING_PATH=/local/staging" >> $PACKER_CONFIG_FILE
-          echo "JOBS=1" >> $PACKER_CONFIG_FILE
-          # TODO Install web server and web app.
-
-          # [DEPRECATED] now, NFS mount is done automatically by the packer script.
-          # mkdir /nfs
-          # TODO re-enable # mount -t nfs -o nfsvers=4.1,rsize=1048576,wsize=1048576,hard,timeo=600,retrans=2,noresvport $_{_MountTarget_}  /nfs
+          echo "JOBS=8" >> $PACKER_CONFIG_FILE
 
           # Python 3.8 as default for cloudformation signal
           ln -sf /usr/bin/python3.8 /usr/bin/python3
@@ -267,25 +262,6 @@ Resources:
     CreationPolicy:
       ResourceSignal:
         Timeout: PT10M
-
-# TODO re-enable # mount -t nfs -o nfsvers=4.1,rsize=1048576,wsize=1048576,hard,timeo=600,retrans=2,noresvport $ REMOVE SPACES { MountTarget }  /nfs
-
-#  FileSystem:
-#    Type: AWS::EFS::FileSystem
-#    Properties:
-#      PerformanceMode: generalPurpose
-
-# TODO: use dynamic mount target from params?
-#  MountTarget:
-#    Type: AWS::EFS::MountTarget
-#    Properties:
-#      FileSystemId:
-#        Ref: FileSystem
-#      SubnetId:
-#        Ref: SubnetId
-#      SecurityGroups:
-#      - Ref: SecurityGroup
-
 
 Outputs:
   InstanceId:
