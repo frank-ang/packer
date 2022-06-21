@@ -10,7 +10,7 @@ Utility to perform packaging of files for Filecoin deals. Performs: file encrypt
 
 # Objective.
 
-To provide a tool for packaging large potentially proprietary data sets into the Filecoin network. Objective is to reduce friction for data movement, across both online deal and offline deal paths.
+Client-side tool for packaging large potentially proprietary data sets into the Filecoin network. Objective is to reduce friction for data movement, across both online deal and offline deal paths.
 
 ## Benefits:
 * Standardization of packaging toolset for large proprietary data sets scenarios.

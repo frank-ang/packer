@@ -238,7 +238,7 @@ Resources:
           echo "DATA_TARGET=${DataTarget}" >> $PACKER_CONFIG_FILE
           echo "ENCRYPTION_KEY=${EncryptionKey}" >> $PACKER_CONFIG_FILE
           echo "STAGING_PATH=/local/staging" >> $PACKER_CONFIG_FILE
-          echo "JOBS=8" >> $PACKER_CONFIG_FILE
+          echo "JOBS=6" >> $PACKER_CONFIG_FILE
 
           # Python 3.8 as default for cloudformation signal
           ln -sf /usr/bin/python3.8 /usr/bin/python3

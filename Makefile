@@ -20,7 +20,7 @@ RESTORE_PATH:=./test/restore
 # To run an XL-sized test, start a tmux session, and run the following:
 # ```
 # make init_testdata
-# time make -j 6 init_xldata 
+# time make -j [THREADS] init_xldata
 # time make test_xl >> test.log 2>&1
 # ```
 # INSTRUCTIONS: Create the following config file, based on template file: config.mk
@@ -152,23 +152,23 @@ init_largedata: init_testdata
 # Finding: AWS Egress cost will be multiples of S3 standard storage cost.
 # *  https://calculator.aws/#/estimate?id=121d54cc893c4fc91220b34547dd37af9d80cbdd
 #
-# Generate bins of test data with 10 parallel processes:
-# ```time make -j 10 init_xldata```
-init_xldata: 0.init_xldata_bin 1.init_xldata_bin 2.init_xldata_bin 3.init_xldata_bin 4.init_xldata_bin 5.init_xldata_bin 6.init_xldata_bin 7.init_xldata_bin 8.init_xldata_bin 9.init_xldata_bin
+# Generate bins of test data with parallel processes:
+# ```time make -j 6 init_xldata```
+init_xldata: 0.init_xldata_bin 1.init_xldata_bin 2.init_xldata_bin 3.init_xldata_bin 4.init_xldata_bin 5.init_xldata_bin 
+# 6.init_xldata_bin 7.init_xldata_bin 8.init_xldata_bin 9.init_xldata_bin
 	@echo "🛠 completed jumbo test data creation. File count: "`find "${XL_DATA_PATH}/ -type f" | wc -l`" , total size: "`du -sh ${XL_DATA_PATH}`" 🛠"
 
-
-# Generate test data in 1 bin. 10GB
+# Helper to generate test data in 1 bin. 33.5GiB per bin.
 %.init_xldata_bin:
 	@mkdir -p ${XL_DATA_PATH}
 	@echo "##🛠 Bin:$*, creating 1KiB files..."
 	./test/gen-large-test-data.sh -c 1000 -s 1024 -p dummy-KiB -d "${XL_DATA_PATH}/$*/1KiB"
 	@echo "##🛠 Bin:$*, creating 1MiB files..." 
-	./test/gen-large-test-data.sh -c 10 -s $$(( 1024 * 1024)) -p dummy-MiB -d "${XL_DATA_PATH}/$*/1MiB"
+	./test/gen-large-test-data.sh -c 500 -s $$(( 1024 * 1024)) -p dummy-MiB -d "${XL_DATA_PATH}/$*/1MiB"
 	@echo "##🛠 Bin:$*, creating 1GiB files..."
-	./test/gen-large-test-data.sh -c 1 -s $$(( 1024 * 1024 * 1024)) -p dummy-GiB -d "${XL_DATA_PATH}/$*/1GiB"
-	@echo "##🛠 Bin:$*, creating 9GiB files..."
-	./test/gen-large-test-data.sh -c 1 -s $$(( 1024 * 1024 * 1024 * 9 )) -p dummy-9GiB -d "${XL_DATA_PATH}/$*/9GiB"
+	./test/gen-large-test-data.sh -c 23 -s $$(( 1024 * 1024 * 1024)) -p dummy-GiB -d "${XL_DATA_PATH}/$*/1GiB"
+	@echo "##🛠 Bin:$*, creating 10GiB files..."
+	./test/gen-large-test-data.sh -c 1 -s $$(( 1024 * 1024 * 1024 * 10 )) -p dummy-10GiB -d "${XL_DATA_PATH}/$*/10GiB"
 
 
 # AWS resources.
