@@ -1,4 +1,5 @@
 #! /bin/bash
+# Packer Job to be executed on EC2 Appliance.
 set -e
 
 . ./packer.conf
@@ -12,7 +13,6 @@ echo "  STAGING_PATH=$STAGING_PATH"
 echo "  JOBS=$JOBS"
 
 # Mount Source NFS/S3 as required
-# IF NFS then mount; elif S3 then rclone;
 #   NFS pattern: "fs-d1234567.efs.[region].amazonaws.com:/sub0/sub1/"
 #   S3 pattern:  "S3://bucket-name/key-name"
 
@@ -79,8 +79,13 @@ then
     apt install -y nginx
     ufw allow 'nginx http' # Port 80 only. To add 443, 'nginx full'
     ufw reload
+
+    cp -f /etc/nginx/nginx.conf /etc/nginx/nginx.conf.orig.bak
+    cp -f /root/packer/aws/nginx.conf /etc/nginx/nginx.conf
     cp -f /etc/nginx/sites-available/default /etc/nginx/sites-available-default-orig.bak
     cp -f /root/packer/aws/etc-nginx-sites-available-default /etc/nginx/sites-available/default
+    cp aws/index.html /usr/share/nginx/html/index.html
+    ln -s $DATA_TARGET /usr/share/nginx/html/car
     systemctl restart nginx
     systemctl status nginx
     curl -i localhost

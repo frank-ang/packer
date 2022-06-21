@@ -16,7 +16,23 @@ To provide a tool for packaging large potentially proprietary data sets into the
 * Standardization of packaging toolset for large proprietary data sets scenarios.
 * Removes lower-level undifferentiated heavy lifting, that the Filecoin ecosystem can reuse in multiple contexts such as "Data storage broker", "Data storage concentrator" e.g. Estuary, Sneakernet provider, Data Client using DIY offline path.
 
-## Supported source storage system types (for MVP):
+## Functionality
+
+Packing:
+* Split large files
+* Encrypt files (RSA-AES asymmetric)
+* Pack into CAR set
+* Parallelism
+
+Unpacking:
+* Unpack from CAR set
+* Decrypt files
+* Join split files into original file
+* Restore files into filesystem.
+
+## Source storage system types:
+
+Current supported filesystems:
 * POSIX NFS / DASD file system.
 
 Future/Backlog options to support additional sources, particularly cloud object storage:
@@ -35,9 +51,13 @@ Cryptographic methods TODO:
 * RSA AES CBC (symmetric)
 * GnuPGP
 
-## Testing & Benchmarking
+## Performance.
 
-Post-MVP, it will be essential to run scalability tests and benchmarks.  
+Initial testing suggests Packer packing rate on 1 instance of AWS EC2 r5d.2xlarge (8 vCPU, 64GB memory, 1x300GiB NVMe), EFS input with 100GB files, output to EBS, RSA-AES encryption, was approximately 120GiB/hr packing rate (2.88TiB/day).
+
+# Quick Start appliance on AWS
+
+If you more interested in automation to generate a CAR set from AWS EFS or AWS S3, a convenience [CloudFormation template](./aws/aws.md) is available to launch an EC2 appliance, configure packer, execute a packing job, and host the packed CAR set on a web server.
 
 # Usage:
 
@@ -64,7 +84,6 @@ options:
 
 ```
 
-
 # Installation
 
 ## Prerequisites
@@ -76,6 +95,7 @@ Dependencies.
 * ipfs-car
 * rsync
 * openssl
+* [stream-commp](github.com/filecoin-project/go-fil-commp-hashhash/cmd/stream-commp)
 
 Refer to Cloudformation yaml file for Ubuntu install commands.
 
@@ -110,11 +130,12 @@ openssl req -x509 -nodes -days 36500 -newkey rsa:2048 -keyout private_key.pem -o
 # Backlog / Caveats
 
 ## Backlog Improvements:
-* Generate CommP per CAR output.
-* Output manifest of file-car mappings.
-* Toggle encryption.
+TODO:
 * AWS Packer AMI with CloudFormation template using IAM instance profile for EFS use-case, on-prem NFS via DX use-case, S3 use-case.
+* Manifest file of file-car mappings.
+* Toggle encryption.
 * S3 support.
+* Metrics for job progress.
 * Additional cryptographic methods: RSA-AES symmetric; GnuPG
 * Compression.
 * Filename / dirname obfuscation. (current implementation preserves cleartext path names in the CAR)
