@@ -57,7 +57,7 @@ Initial testing suggests Packer packing rate on 1 instance of AWS EC2 r5d.2xlarg
 
 # Quick Start appliance on AWS
 
-If you more interested in automation to generate a CAR set from AWS EFS or AWS S3, a convenience, [view the quickstart docs](./aws/aws.md) is available to launch an EC2 appliance, configure packer, execute a packing job, and host the packed CAR set on a web server.
+If you more interested in automation to generate a CAR set from AWS EFS or AWS S3, a convenience, [view the quickstart docs](./aws.md) is available to launch an EC2 appliance, configure packer, execute a packing job, and host the packed CAR set on a web server.
 
 To get started,
 
