@@ -1,5 +1,10 @@
 # Packer.
 
+> I am likely to suspend further work on this tool.
+>
+> For PB-scale data onboarding onto Filecoin network, please consider using the [Singularity Tool](https://github.com/tech-greedy/singularity) tool instead.
+> Singularity tool should be the optimal client-side data preparation tool, moving forward.
+
 [![CircleCI](https://circleci.com/gh/frank-ang/packer/tree/test.svg?style=svg)](https://circleci.com/gh/frank-ang/packer/tree/test)
 
 Utility to perform packaging of files for Filecoin deals. Performs: file encryption, large file splitting, and generation of CAR files, in preparation of data storage movement. After data retrieval from Filecoin, performs: CAR file extraction, large file reassembly, file decryption.
@@ -57,7 +62,7 @@ Initial testing suggests Packer packing rate on 1 instance of AWS EC2 r5d.2xlarg
 
 # Quick Start appliance on AWS
 
-If you more interested in automation to generate a CAR set from AWS EFS or AWS S3, a convenience, [view the quickstart docs](./aws/aws.md) is available to launch an EC2 appliance, configure packer, execute a packing job, and host the packed CAR set on a web server.
+If you more interested in automation to generate a CAR set from AWS EFS or AWS S3, a convenience, [view the quickstart docs](./aws.md) is available to launch an EC2 appliance, configure packer, execute a packing job, and host the packed CAR set on a web server.
 
 To get started,
 
