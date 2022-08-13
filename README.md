@@ -1,5 +1,10 @@
 # Packer.
 
+> I am likely to suspend further work on this tool.
+>
+> For PB-scale data onboarding onto Filecoin network, please consider using the [Singularity Tool](https://github.com/tech-greedy/singularity) tool instead.
+> Singularity tool should be the optimal client-side data preparation tool, moving forward.
+
 [![CircleCI](https://circleci.com/gh/frank-ang/packer/tree/test.svg?style=svg)](https://circleci.com/gh/frank-ang/packer/tree/test)
 
 Utility to perform packaging of files for Filecoin deals. Performs: file encryption, large file splitting, and generation of CAR files, in preparation of data storage movement. After data retrieval from Filecoin, performs: CAR file extraction, large file reassembly, file decryption.
