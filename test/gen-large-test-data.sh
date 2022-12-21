@@ -5,7 +5,7 @@
 # * create 1 test file of 1MB size
 #	gen-large-test-data.sh -c 1 -s 1048576 -p mega
 # * create 2 test files of 1GB size
-#   gen-large-test-data.sh -c 2 -s 1073741824 - giga
+#   gen-large-test-data.sh -c 2 -s 1073741824 -p giga
 #
 
 while getopts c:s:p:d: flag
